@@ -1,0 +1,8 @@
+# VSCodee files
+.vscode/
+!.vscode/launch.json
+
+# IntelliJ files
+.idea/
+*.iml
+

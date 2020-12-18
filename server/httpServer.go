@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"starter-kit/server/handler"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -18,18 +20,12 @@ type HTTPServer struct {
 // NewHTTPServer ...
 func NewHTTPServer(port int16) *HTTPServer {
 	addr := fmt.Sprint(":", port)
-	router := mux.NewRouter()
-	registerRoutes(router)
+	router := makeRouter()
 
 	delegate := &http.Server{Addr: addr, Handler: router}
 
 	httpServer := &HTTPServer{delegate}
 	return httpServer
-}
-
-func registerRoutes(router *mux.Router) {
-	defaultHandler := handler.NewDefaultHandler()
-	router.Path("/").Handler(defaultHandler)
 }
 
 // Start ...
@@ -51,3 +47,20 @@ func (s *HTTPServer) Start() {
 // 	}
 // 	log.Print("HTTPServer shutdown")
 // }
+
+// ========== Private Helpers ==========
+
+func makeRouter() http.Handler {
+	router := mux.NewRouter()
+	registerRoutes(router)
+
+	// Wrap router in a logging handler in order to create access logs
+	// See https://godoc.org/github.com/gorilla/handlers#LoggingHandler
+	loggedRouter := handlers.LoggingHandler(os.Stdout, router)
+	return loggedRouter
+}
+
+func registerRoutes(router *mux.Router) {
+	defaultHandler := handler.NewDefaultHandler()
+	router.Path("/").Handler(defaultHandler)
+}

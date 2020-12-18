@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"crud-starter/server/handler"
+	"starter-kit/server/handler"
 
 	"github.com/gorilla/mux"
 )

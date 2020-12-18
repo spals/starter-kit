@@ -1,6 +1,6 @@
 package main
 
-import "crud-starter/server"
+import "starter-kit/server"
 
 func main() {
 	s := server.NewHTTPServer(8080)

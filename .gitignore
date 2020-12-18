@@ -1,6 +1,7 @@
 # VSCodee files
 .vscode/
 !.vscode/launch.json
+__debug_bin
 
 # IntelliJ files
 .idea/

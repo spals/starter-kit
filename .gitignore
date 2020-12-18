@@ -1,5 +1,5 @@
-# VSCodee files
-.vscode/
+# VSCode files
+.vscode/*
 !.vscode/launch.json
 __debug_bin
 

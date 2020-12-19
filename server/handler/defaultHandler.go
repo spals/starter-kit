@@ -16,5 +16,5 @@ func NewDefaultHandler() *DefaultHandler {
 
 func (h *DefaultHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
-	w.Write([]byte(strings.Join([]string{"Default response to: ", "(" + r.Method + ")", r.URL.Path}, " ")))
+	w.Write([]byte(strings.Join([]string{"Default response to:", "(" + r.Method + ")", r.URL.Path}, " ")))
 }

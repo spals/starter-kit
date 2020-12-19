@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -24,10 +25,8 @@ type HTTPServer struct {
 
 // NewHTTPServer ...
 func NewHTTPServer(config *config.HTTPServerConfig) *HTTPServer {
-	addr := fmt.Sprint(":", config.Port)
 	router := makeRouter(config)
-
-	delegate := &http.Server{Addr: addr, Handler: router}
+	delegate := &http.Server{Handler: router}
 
 	httpServer := &HTTPServer{config, delegate}
 	return httpServer
@@ -35,23 +34,58 @@ func NewHTTPServer(config *config.HTTPServerConfig) *HTTPServer {
 
 // Start ...
 func (s *HTTPServer) Start() {
-	log.Printf("Starting HTTPServer with %s", s.config.ToJSONString())
-
 	// Include a graceful server shutdown sequence
 	// See https://medium.com/honestbee-tw-engineer/gracefully-shutdown-in-go-http-server-5f5e6b83da5a#16fd
 	httpServerStopped := make(chan os.Signal, 1)
 	signal.Notify(httpServerStopped, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
+	customListener := s.makeCustomListener()
+	if customListener == nil {
+		log.Printf("Starting HTTPServer with default listener: %s", s.config.ToJSONString())
+	} else {
+		log.Printf("Starting HTTPServer with custom listener: %s", s.config.ToJSONString())
+	}
+
 	go func() {
-		if err := s.delegate.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("HTTPServer start failure: %s", err)
+		// If we do not have a custom listener, then use the default listener
+		if customListener == nil {
+			s.delegate.Addr = fmt.Sprint(":", s.config.Port)
+			if err := s.delegate.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("HTTPServer start failure with default listener: %s", err)
+				os.Exit(1)
+			}
+		} else {
+			if err := s.delegate.Serve(customListener); err != nil {
+				log.Fatalf("HTTPServer start failure with custom listener: %s", err)
+			}
 		}
 	}()
-	log.Printf("HTTPServer started at %+v", s.delegate.Addr)
+	log.Print("HTTPServer started")
 
 	<-httpServerStopped
 	log.Print("HTTPServer stopped")
 	s.stop()
+}
+
+// If a random port is requested, then make a custom listener on an open port
+// Otherwise, return nil
+// See https://stackoverflow.com/questions/43424787/how-to-use-next-available-port-in-http-listenandserve
+func (s *HTTPServer) makeCustomListener() net.Listener {
+	if s.config.UseRandomPort {
+		log.Print("Finding available random port")
+		listener, err := net.Listen("tcp", ":0")
+		if err != nil {
+			log.Fatalf("Error while finding random port: %s", err)
+			os.Exit(1)
+		}
+
+		newPort := listener.Addr().(*net.TCPAddr).Port
+		log.Printf("Overwriting configured port (%d) with random port (%d)", s.config.Port, newPort)
+		s.config.Port = newPort
+		return listener
+	}
+
+	return nil
 }
 
 func (s *HTTPServer) stop() {

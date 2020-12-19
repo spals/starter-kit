@@ -55,7 +55,7 @@ func (s *HTTPServer) Start() {
 				os.Exit(1)
 			}
 		} else {
-			if err := s.delegate.Serve(customListener); err != nil {
+			if err := s.delegate.Serve(customListener); err != nil && err != http.ErrServerClosed {
 				log.Fatalf("HTTPServer start failure with custom listener: %s", err)
 			}
 		}
@@ -94,6 +94,7 @@ func (s *HTTPServer) stop() {
 		cancel()
 	}()
 
+	log.Print("Shutting down HTTPServer")
 	if err := s.delegate.Shutdown(ctx); err != nil {
 		log.Fatalf("HTTPServer shutdown failed: %+v", err)
 	}

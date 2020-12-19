@@ -14,9 +14,9 @@ import (
 // HTTPServerConfig ...
 // See https://github.com/sethvargo/go-envconfig/blob/main/README.md
 type HTTPServerConfig struct {
-	Port            int           `env:"PORT,default=8080"`
-	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT,default=1s"`
-	UseRandomPort   bool          `env:"USE_RANDOM_PORT,default=false"`
+	AssignRandomPort bool          `env:"ASSIGN_RANDOM_PORT,default=false"`
+	Port             int           `env:"PORT,default=8080"`
+	ShutdownTimeout  time.Duration `env:"SHUTDOWN_TIMEOUT,default=1s"`
 }
 
 // NewHTTPServerConfig ...

@@ -71,7 +71,7 @@ func (s *HTTPServer) Start() {
 // Otherwise, return nil
 // See https://stackoverflow.com/questions/43424787/how-to-use-next-available-port-in-http-listenandserve
 func (s *HTTPServer) makeCustomListener() net.Listener {
-	if s.config.UseRandomPort {
+	if s.config.AssignRandomPort {
 		log.Print("Finding available random port")
 		listener, err := net.Listen("tcp", ":0")
 		if err != nil {

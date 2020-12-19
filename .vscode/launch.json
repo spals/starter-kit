@@ -5,11 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Server",
-            "type": "go",
-            "request": "launch",
+            "name": "HTTPServer",
             "mode": "auto",
             "program": "${workspaceRoot}/main.go",
+            "request": "launch",
+            "type": "go",
+
             "env": {},
             "args": []
         }

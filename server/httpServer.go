@@ -1,10 +1,14 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"starter-kit/server/handler"
 
@@ -30,23 +34,36 @@ func NewHTTPServer(port int16) *HTTPServer {
 
 // Start ...
 func (s *HTTPServer) Start() {
-	log.Printf("Starting HTTPServer at %+v", s.delegate.Addr)
-	httpError := s.delegate.ListenAndServe()
-	if httpError != nil {
-		log.Fatal("FAILURE!")
-	}
+	log.Printf("Starting HTTPServer...")
 
-	// s.stop()
+	// Include a graceful server shutdown sequence
+	// See https://medium.com/honestbee-tw-engineer/gracefully-shutdown-in-go-http-server-5f5e6b83da5a#16fd
+	httpServerStopped := make(chan os.Signal, 1)
+	signal.Notify(httpServerStopped, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		if err := s.delegate.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("HTTPServer start failure: %s", err)
+		}
+	}()
+	log.Printf("HTTPServer started at %+v", s.delegate.Addr)
+
+	<-httpServerStopped
+	log.Print("HTTPServer stopped")
+	s.stop()
 }
 
-// func (s *HTTPServer) stop() {
-// 	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+func (s *HTTPServer) stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer func() {
+		cancel()
+	}()
 
-// 	if err := s.delegate.Shutdown(ctx); err != nil {
-// 		log.Fatalf("HTTPServer shutdown failed: %+v", err)
-// 	}
-// 	log.Print("HTTPServer shutdown")
-// }
+	if err := s.delegate.Shutdown(ctx); err != nil {
+		log.Fatalf("HTTPServer shutdown failed: %+v", err)
+	}
+	log.Print("HTTPServer shutdown")
+}
 
 // ========== Private Helpers ==========
 

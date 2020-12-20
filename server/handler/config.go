@@ -19,7 +19,7 @@ func NewHTTPServerConfigHandler(config *config.HTTPServerConfig) *HTTPServerConf
 }
 
 func (h *HTTPServerConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(h.config.ToJSONString(false /*prettyPrint*/)))
 }

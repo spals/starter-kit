@@ -22,8 +22,7 @@ func TestHTTPServerConfigHandler(t *testing.T) {
 	resp, respErr := http.Get(server.URL)
 	if assert.NoError(respErr) {
 		assert.Equal(200, resp.StatusCode)
-		// FIXME
-		// assert.Equal("application/json", resp.Header.Get("Content-Type"))
+		assert.Equal("application/json; charset=utf-8", resp.Header.Get("Content-Type"))
 	}
 
 	body, bodyErr := ioutil.ReadAll(resp.Body)

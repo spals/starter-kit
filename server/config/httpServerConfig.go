@@ -12,11 +12,16 @@ import (
 )
 
 // HTTPServerConfig ...
+// Full configuration for HTTPServer
+//
 // See https://github.com/sethvargo/go-envconfig/blob/main/README.md
 type HTTPServerConfig struct {
 	AssignRandomPort bool          `env:"ASSIGN_RANDOM_PORT,default=false"`
 	Port             int           `env:"PORT,default=8080"`
 	ShutdownTimeout  time.Duration `env:"SHUTDOWN_TIMEOUT,default=1s"`
+
+	LivenessConfig  *LivenessConfig  `env:",prefix=LIVENESS_"`
+	ReadinessConfig *ReadinessConfig `env:"prefix=READINESS_"`
 }
 
 // NewHTTPServerConfig ...

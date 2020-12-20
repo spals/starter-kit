@@ -41,9 +41,9 @@ func (s *HTTPServer) Start() {
 
 	customListener := s.makeCustomListener()
 	if customListener == nil {
-		log.Printf("Starting HTTPServer with default listener: %s", s.config.ToJSONString())
+		log.Printf("Starting HTTPServer on port %d", s.config.Port)
 	} else {
-		log.Printf("Starting HTTPServer with custom listener: %s", s.config.ToJSONString())
+		log.Printf("Starting HTTPServer on port %d", customListener.Addr().(*net.TCPAddr).Port)
 	}
 
 	go func() {
@@ -114,9 +114,10 @@ func makeRouter(config *config.HTTPServerConfig) http.Handler {
 }
 
 func registerRoutes(config *config.HTTPServerConfig, router *mux.Router) {
-	configHandler := handler.NewConfigHandler(config)
-	router.Path("/config").Methods("GET").Handler(configHandler)
+	healthCheckHandler := handler.NewHealthCheckHandler(config)
+	router.Path("/live").Methods("GET").HandlerFunc(healthCheckHandler.LiveEndpoint)
+	router.Path("/ready").Methods("GET").HandlerFunc(healthCheckHandler.ReadyEndpoint)
 
-	defaultHandler := handler.NewDefaultHandler()
-	router.Path("/").Handler(defaultHandler)
+	httpServerConfigHandler := handler.NewHTTPServerConfigHandler(config)
+	router.Path("/config").Methods("GET").Handler(httpServerConfigHandler)
 }

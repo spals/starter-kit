@@ -35,12 +35,17 @@ func NewHTTPServerConfig(l envconfig.Lookuper) *HTTPServerConfig {
 		os.Exit(1)
 	}
 
-	log.Printf("HTTPServerConfig parsed as %s", config.ToJSONString())
+	log.Printf("HTTPServerConfig parsed as \n%s", config.ToJSONString(true /*prettyPrint*/))
 	return &config
 }
 
 // ToJSONString ...
-func (c *HTTPServerConfig) ToJSONString() string {
+func (c *HTTPServerConfig) ToJSONString(prettyPrint bool) string {
+	if prettyPrint {
+		json, _ := json.MarshalIndent(c, "", "  ")
+		return string(json)
+	}
+
 	json, _ := json.Marshal(c)
 	return string(json)
 }

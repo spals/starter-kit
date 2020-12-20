@@ -8,17 +8,17 @@ import (
 
 // ConfigHandler ...
 // HTTP handler which returns HTTP server configuration
-type ConfigHandler struct {
+type configHandler struct {
 	config *config.HTTPServerConfig
 }
 
 // NewConfigHandler ...
-func NewConfigHandler(config *config.HTTPServerConfig) *ConfigHandler {
-	h := &ConfigHandler{config}
+func NewConfigHandler(config *config.HTTPServerConfig) http.Handler {
+	h := &configHandler{config}
 	return h
 }
 
-func (h *ConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *configHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(h.config.ToJSONString()))

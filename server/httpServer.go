@@ -41,9 +41,9 @@ func (s *HTTPServer) Start() {
 
 	customListener := s.makeCustomListener()
 	if customListener == nil {
-		log.Printf("Starting HTTPServer with default listener: %s", s.config.ToJSONString())
+		log.Printf("Starting HTTPServer on port %d", s.config.Port)
 	} else {
-		log.Printf("Starting HTTPServer with custom listener: %s", s.config.ToJSONString())
+		log.Printf("Starting HTTPServer on port %d", customListener.Addr().(*net.TCPAddr).Port)
 	}
 
 	go func() {

@@ -20,13 +20,8 @@ type HTTPServerConfig struct {
 	Port             int           `env:"PORT,default=8080"`
 	ShutdownTimeout  time.Duration `env:"SHUTDOWN_TIMEOUT,default=1s"`
 
-	LivenessConfig *LivenessConfig `env:",prefix=LIVENESS_"`
-}
-
-// LivenessConfig ...
-// Configuration used to check liveness for HTTPServer
-type LivenessConfig struct {
-	MaxGoRoutines int `env:"MAX_GO_ROUTINES,default=100"`
+	LivenessConfig  *LivenessConfig  `env:",prefix=LIVENESS_"`
+	ReadinessConfig *ReadinessConfig `env:"prefix=READINESS_"`
 }
 
 // NewHTTPServerConfig ...

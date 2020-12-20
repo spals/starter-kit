@@ -7,7 +7,7 @@
         {
             "name": "HTTPServer",
             "mode": "auto",
-            "program": "${workspaceRoot}/main.go",
+            "program": "${workspaceRoot}",
             "request": "launch",
             "type": "go",
 

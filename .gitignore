@@ -1,3 +1,6 @@
+# Output files
+starter-kit
+
 # VSCode files
 .vscode/*
 !.vscode/launch.json

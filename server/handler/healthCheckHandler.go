@@ -10,12 +10,12 @@ import (
 // Creates live and readiness checks based off of HTTPServer configuration
 //
 // See https://github.com/heptiolabs/healthcheck/blob/master/README.md
-func NewHealthCheckHandler(config *config.HTTPServerConfig) healthcheck.Handler {
+func NewHealthCheckHandler(config *config.HTTPServerConfig) *healthcheck.Handler {
 	healthCheckHandler := healthcheck.NewHandler()
 	configureLivenessChecks(config, healthCheckHandler)
 	configureReadinessChecks(config, healthCheckHandler)
 
-	return healthCheckHandler
+	return &healthCheckHandler
 }
 
 // ========== Private Helpers ==========

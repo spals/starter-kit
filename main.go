@@ -1,8 +1,8 @@
 package main
 
 import (
-	"starter-kit/server"
-	"starter-kit/server/config"
+	"log"
+	"os"
 
 	"github.com/sethvargo/go-envconfig"
 )
@@ -10,8 +10,14 @@ import (
 func main() {
 	// Parse the HTTPServer config from environment variables prefixed with HTTP_SERVER (e.g. HTTP_SERVER_PORT)
 	envVars := envconfig.PrefixLookuper("HTTP_SERVER_", envconfig.OsLookuper())
-	c := config.NewHTTPServerConfig(envVars)
 
-	s := server.NewHTTPServer(c)
-	s.Start()
+	log.Print("Initializing HTTPServer")
+	httpServer, err := InitializeHTTPServer(envVars)
+	if err != nil {
+		log.Fatalf("HTTPServer initialization failure: %s", err)
+		os.Exit(1)
+	}
+	log.Print("HTTPServer initialized")
+
+	httpServer.Start()
 }

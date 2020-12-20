@@ -15,20 +15,26 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/heptiolabs/healthcheck"
 )
 
 // HTTPServer ...
 type HTTPServer struct {
 	config   *config.HTTPServerConfig
 	delegate *http.Server
+	handlers []http.Handler
 }
 
 // NewHTTPServer ...
-func NewHTTPServer(config *config.HTTPServerConfig) *HTTPServer {
+func NewHTTPServer(
+	config *config.HTTPServerConfig,
+	healthCheckHandler *healthcheck.Handler,
+	httpServerConfigHandler *handler.HTTPServerConfigHandler,
+) *HTTPServer {
 	router := makeRouter(config)
 	delegate := &http.Server{Handler: router}
 
-	httpServer := &HTTPServer{config, delegate}
+	httpServer := &HTTPServer{config, delegate, []http.Handler{}}
 	return httpServer
 }
 
@@ -115,8 +121,8 @@ func makeRouter(config *config.HTTPServerConfig) http.Handler {
 
 func registerRoutes(config *config.HTTPServerConfig, router *mux.Router) {
 	healthCheckHandler := handler.NewHealthCheckHandler(config)
-	router.Path("/live").Methods("GET").HandlerFunc(healthCheckHandler.LiveEndpoint)
-	router.Path("/ready").Methods("GET").HandlerFunc(healthCheckHandler.ReadyEndpoint)
+	router.Path("/live").Methods("GET").HandlerFunc((*healthCheckHandler).LiveEndpoint)
+	router.Path("/ready").Methods("GET").HandlerFunc((*healthCheckHandler).ReadyEndpoint)
 
 	httpServerConfigHandler := handler.NewHTTPServerConfigHandler(config)
 	router.Path("/config").Methods("GET").Handler(httpServerConfigHandler)

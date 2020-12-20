@@ -6,19 +6,18 @@ import (
 	"starter-kit/server/config"
 )
 
-// ConfigHandler ...
 // HTTP handler which returns HTTP server configuration
-type configHandler struct {
+type httpServerConfigHandler struct {
 	config *config.HTTPServerConfig
 }
 
-// NewConfigHandler ...
-func NewConfigHandler(config *config.HTTPServerConfig) http.Handler {
-	h := &configHandler{config}
+// NewHTTPServerConfigHandler ...
+func NewHTTPServerConfigHandler(config *config.HTTPServerConfig) http.Handler {
+	h := &httpServerConfigHandler{config}
 	return h
 }
 
-func (h *configHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *httpServerConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(h.config.ToJSONString()))

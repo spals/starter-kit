@@ -114,10 +114,10 @@ func makeRouter(config *config.HTTPServerConfig) http.Handler {
 }
 
 func registerRoutes(config *config.HTTPServerConfig, router *mux.Router) {
-	configHandler := handler.NewConfigHandler(config)
-	router.Path("/config").Methods("GET").Handler(configHandler)
-
 	healthCheckHandler := handler.NewHealthCheckHandler(config)
 	router.Path("/live").Methods("GET").HandlerFunc(healthCheckHandler.LiveEndpoint)
 	router.Path("/ready").Methods("GET").HandlerFunc(healthCheckHandler.ReadyEndpoint)
+
+	httpServerConfigHandler := handler.NewHTTPServerConfigHandler(config)
+	router.Path("/config").Methods("GET").Handler(httpServerConfigHandler)
 }

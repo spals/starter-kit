@@ -22,19 +22,32 @@ import (
 type HTTPServer struct {
 	config   *config.HTTPServerConfig
 	delegate *http.Server
-	handlers []http.Handler
 }
 
+// Function callback definition used to register routes in HTTPServer router
+type routerRegistration func(router *mux.Router)
+
 // NewHTTPServer ...
+// Create a new HTTPServer with the given configuration and request handlers.
+//
+// New request handlers should be added here and in wire.go and registered in
+// the router below.
 func NewHTTPServer(
 	config *config.HTTPServerConfig,
 	healthCheckHandler *healthcheck.Handler,
 	httpServerConfigHandler *handler.HTTPServerConfigHandler,
 ) *HTTPServer {
-	router := makeRouter(config)
+	router := makeRouter(
+		config,
+		func(router *mux.Router) {
+			router.Path("/config").Methods("GET").Handler(httpServerConfigHandler)
+			router.Path("/live").Methods("GET").HandlerFunc((*healthCheckHandler).LiveEndpoint)
+			router.Path("/ready").Methods("GET").HandlerFunc((*healthCheckHandler).ReadyEndpoint)
+		},
+	)
 	delegate := &http.Server{Handler: router}
 
-	httpServer := &HTTPServer{config, delegate, []http.Handler{}}
+	httpServer := &HTTPServer{config, delegate}
 	return httpServer
 }
 
@@ -58,11 +71,12 @@ func (s *HTTPServer) Start() {
 			s.delegate.Addr = fmt.Sprint(":", s.config.Port)
 			if err := s.delegate.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				log.Fatalf("HTTPServer start failure with default listener: %s", err)
-				os.Exit(1)
+				os.Exit(2)
 			}
 		} else {
 			if err := s.delegate.Serve(customListener); err != nil && err != http.ErrServerClosed {
 				log.Fatalf("HTTPServer start failure with custom listener: %s", err)
+				os.Exit(2)
 			}
 		}
 	}()
@@ -82,7 +96,7 @@ func (s *HTTPServer) makeCustomListener() net.Listener {
 		listener, err := net.Listen("tcp", ":0")
 		if err != nil {
 			log.Fatalf("Error while finding random port: %s", err)
-			os.Exit(1)
+			os.Exit(2)
 		}
 
 		newPort := listener.Addr().(*net.TCPAddr).Port
@@ -109,21 +123,15 @@ func (s *HTTPServer) stop() {
 
 // ========== Private Helpers ==========
 
-func makeRouter(config *config.HTTPServerConfig) http.Handler {
+func makeRouter(
+	config *config.HTTPServerConfig,
+	routerRegistration routerRegistration,
+) http.Handler {
 	router := mux.NewRouter()
-	registerRoutes(config, router)
+	routerRegistration(router)
 
 	// Wrap router in a logging handler in order to create access logs
 	// See https://godoc.org/github.com/gorilla/handlers#LoggingHandler
 	loggedRouter := handlers.LoggingHandler(os.Stdout, router)
 	return loggedRouter
-}
-
-func registerRoutes(config *config.HTTPServerConfig, router *mux.Router) {
-	healthCheckHandler := handler.NewHealthCheckHandler(config)
-	router.Path("/live").Methods("GET").HandlerFunc((*healthCheckHandler).LiveEndpoint)
-	router.Path("/ready").Methods("GET").HandlerFunc((*healthCheckHandler).ReadyEndpoint)
-
-	httpServerConfigHandler := handler.NewHTTPServerConfigHandler(config)
-	router.Path("/config").Methods("GET").Handler(httpServerConfigHandler)
 }

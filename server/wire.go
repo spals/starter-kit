@@ -1,9 +1,8 @@
 // +build wireinject
 
-package main
+package server
 
 import (
-	"starter-kit/server"
 	"starter-kit/server/config"
 	"starter-kit/server/handler"
 
@@ -12,7 +11,7 @@ import (
 )
 
 // InitializeHTTPServer ...
-func InitializeHTTPServer(l envconfig.Lookuper) (*server.HTTPServer, error) {
+func InitializeHTTPServer(l envconfig.Lookuper) (*HTTPServer, error) {
 	wire.Build(
 		// Configuration
 		config.NewHTTPServerConfig,
@@ -20,7 +19,7 @@ func InitializeHTTPServer(l envconfig.Lookuper) (*server.HTTPServer, error) {
 		handler.NewHealthCheckHandler,
 		handler.NewHTTPServerConfigHandler,
 		// Server
-		server.NewHTTPServer,
+		NewHTTPServer,
 	)
-	return &server.HTTPServer{}, nil
+	return &HTTPServer{}, nil
 }

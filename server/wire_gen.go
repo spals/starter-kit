@@ -3,11 +3,10 @@
 //go:generate wire
 //+build !wireinject
 
-package main
+package server
 
 import (
 	"github.com/sethvargo/go-envconfig"
-	"starter-kit/server"
 	"starter-kit/server/config"
 	"starter-kit/server/handler"
 )
@@ -15,10 +14,10 @@ import (
 // Injectors from wire.go:
 
 // InitializeHTTPServer ...
-func InitializeHTTPServer(l envconfig.Lookuper) (*server.HTTPServer, error) {
+func InitializeHTTPServer(l envconfig.Lookuper) (*HTTPServer, error) {
 	httpServerConfig := config.NewHTTPServerConfig(l)
 	healthcheckHandler := handler.NewHealthCheckHandler(httpServerConfig)
 	httpServerConfigHandler := handler.NewHTTPServerConfigHandler(httpServerConfig)
-	httpServer := server.NewHTTPServer(httpServerConfig, healthcheckHandler, httpServerConfigHandler)
+	httpServer := NewHTTPServer(httpServerConfig, healthcheckHandler, httpServerConfigHandler)
 	return httpServer, nil
 }

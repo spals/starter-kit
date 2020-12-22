@@ -84,7 +84,21 @@ func (s *HTTPServer) Start() {
 
 	<-httpServerStopped
 	log.Print("HTTPServer stopped")
-	s.stop()
+	s.Shutdown()
+}
+
+// Shutdown ...
+func (s *HTTPServer) Shutdown() {
+	ctx, cancel := context.WithTimeout(context.Background(), s.config.ShutdownTimeout)
+	defer func() {
+		cancel()
+	}()
+
+	log.Print("Shutting down HTTPServer")
+	if err := s.delegate.Shutdown(ctx); err != nil {
+		log.Fatalf("HTTPServer shutdown failed: %+v", err)
+	}
+	log.Print("HTTPServer shutdown")
 }
 
 // If a random port is requested, then make a custom listener on an open port
@@ -106,19 +120,6 @@ func (s *HTTPServer) makeCustomListener() net.Listener {
 	}
 
 	return nil
-}
-
-func (s *HTTPServer) stop() {
-	ctx, cancel := context.WithTimeout(context.Background(), s.config.ShutdownTimeout)
-	defer func() {
-		cancel()
-	}()
-
-	log.Print("Shutting down HTTPServer")
-	if err := s.delegate.Shutdown(ctx); err != nil {
-		log.Fatalf("HTTPServer shutdown failed: %+v", err)
-	}
-	log.Print("HTTPServer shutdown")
 }
 
 // ========== Private Helpers ==========

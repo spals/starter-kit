@@ -2,7 +2,7 @@ package handler
 
 import (
 	"github.com/heptiolabs/healthcheck"
-	"github.com/spals/starter-kit/server/config"
+	"github.com/spals/starter-kit/http/server/config"
 )
 
 // NewHealthCheckHandler ...

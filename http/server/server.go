@@ -13,8 +13,8 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/heptiolabs/healthcheck"
-	"github.com/spals/starter-kit/server/config"
-	"github.com/spals/starter-kit/server/handler"
+	"github.com/spals/starter-kit/http/server/config"
+	"github.com/spals/starter-kit/http/server/handler"
 )
 
 // HTTPServer ...

@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/sethvargo/go-envconfig"
-	"github.com/spals/starter-kit/server"
+	"github.com/spals/starter-kit/http/server"
 )
 
 func main() {

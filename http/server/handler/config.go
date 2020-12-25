@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/spals/starter-kit/server/config"
+	"github.com/spals/starter-kit/http/server/config"
 )
 
 // HTTPServerConfigHandler ...

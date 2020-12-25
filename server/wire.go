@@ -3,11 +3,10 @@
 package server
 
 import (
-	"starter-kit/server/config"
-	"starter-kit/server/handler"
-
 	"github.com/google/wire"
 	"github.com/sethvargo/go-envconfig"
+	"github.com/spals/starter-kit/server/config"
+	"github.com/spals/starter-kit/server/handler"
 )
 
 // InitializeHTTPServer ...

@@ -2,11 +2,10 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"time"
-
-	"encoding/json"
 
 	"github.com/sethvargo/go-envconfig"
 )

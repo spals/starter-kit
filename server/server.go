@@ -10,12 +10,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"starter-kit/server/config"
-	"starter-kit/server/handler"
-
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/heptiolabs/healthcheck"
+	"github.com/spals/starter-kit/server/config"
+	"github.com/spals/starter-kit/server/handler"
 )
 
 // HTTPServer ...

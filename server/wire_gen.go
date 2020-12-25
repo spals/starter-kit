@@ -7,8 +7,8 @@ package server
 
 import (
 	"github.com/sethvargo/go-envconfig"
-	"starter-kit/server/config"
-	"starter-kit/server/handler"
+	"github.com/spals/starter-kit/server/config"
+	"github.com/spals/starter-kit/server/handler"
 )
 
 // Injectors from wire.go:

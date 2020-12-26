@@ -7,9 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"starter-kit/server/config"
-	"starter-kit/server/handler"
-
+	"github.com/spals/starter-kit/http/server/config"
+	"github.com/spals/starter-kit/http/server/handler"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -4,9 +4,8 @@ import (
 	"log"
 	"os"
 
-	"starter-kit/server"
-
 	"github.com/sethvargo/go-envconfig"
+	"github.com/spals/starter-kit/http/server"
 )
 
 func main() {

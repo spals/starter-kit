@@ -8,24 +8,24 @@ import (
 	"os/signal"
 	"syscall"
 
-	pb "github.com/spals/starter-kit/grpc/proto"
+	"github.com/spals/starter-kit/grpc/proto"
 	"github.com/spals/starter-kit/grpc/server/impl"
 	"google.golang.org/grpc"
 )
 
 // GrpcServer ...
 type GrpcServer struct {
-	config   *pb.GrpcServerConfig
+	config   *proto.GrpcServerConfig
 	delegate *grpc.Server
 }
 
 // NewGrpcServer ...
 func NewGrpcServer(
-	config *pb.GrpcServerConfig,
+	config *proto.GrpcServerConfig,
 	configServer *impl.ConfigServer,
 ) *GrpcServer {
 	delegate := grpc.NewServer()
-	pb.RegisterConfigServer(delegate, configServer)
+	proto.RegisterConfigServer(delegate, configServer)
 
 	grpcServer := &GrpcServer{config, delegate}
 	return grpcServer
@@ -64,7 +64,7 @@ func (s *GrpcServer) Shutdown() {
 func (s *GrpcServer) makeListener() net.Listener {
 	// If a random port is requested, then find an open port
 	// See https://stackoverflow.com/questions/43424787/how-to-use-next-available-port-in-http-listenandserve
-	if s.config.GetAssignRandomPort() {
+	if s.config.GetAssignRandomPort() || s.config.GetPort() == 0 {
 		log.Print("Finding available random port")
 		listener, err := net.Listen("tcp", ":0")
 		if err != nil {

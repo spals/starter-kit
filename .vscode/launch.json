@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "GrpcServer",
+            "mode": "auto",
+            "program": "${workspaceRoot}/grpc",
+            "request": "launch",
+            "type": "go",
+
+            "env": {},
+            "args": []
+        },
+        {
             "name": "HTTPServer",
             "mode": "auto",
             "program": "${workspaceRoot}/http",

@@ -23,6 +23,7 @@ type GrpcServer struct {
 func NewGrpcServer(
 	config *proto.GrpcServerConfig,
 	configServer *impl.ConfigServer,
+	healthServer *impl.HealthServer,
 ) *GrpcServer {
 	delegate := grpc.NewServer()
 	proto.RegisterConfigServer(delegate, configServer)

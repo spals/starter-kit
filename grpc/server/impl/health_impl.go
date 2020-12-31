@@ -9,6 +9,7 @@ import (
 )
 
 // HealthServer ...
+// Implementation of auto-generated HealthServer Grpc framework
 type HealthServer struct {
 	proto.UnimplementedHealthServer
 
@@ -23,6 +24,8 @@ type healthResponseWriter struct {
 	status  int
 }
 
+// ========== Constructor ==========
+
 // NewHealthServer ...
 func NewHealthServer(config *proto.GrpcServerConfig) *HealthServer {
 	healthCheckHandler := healthcheck.NewHandler()
@@ -32,6 +35,10 @@ func NewHealthServer(config *proto.GrpcServerConfig) *HealthServer {
 	s := &HealthServer{healthCheckHandler: healthCheckHandler}
 	return s
 }
+
+// ========== Implementation Methods ==========
+// These are required implementations based on the grpc service
+// definition in config.proto
 
 // GetLive ...
 func (s *HealthServer) GetLive(ctx context.Context, req *proto.LiveRequest) (*proto.LiveResponse, error) {

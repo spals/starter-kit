@@ -27,6 +27,7 @@ func NewGrpcServer(
 ) *GrpcServer {
 	delegate := grpc.NewServer()
 	proto.RegisterConfigServer(delegate, configServer)
+	proto.RegisterHealthServer(delegate, healthServer)
 
 	grpcServer := &GrpcServer{config, delegate}
 	return grpcServer

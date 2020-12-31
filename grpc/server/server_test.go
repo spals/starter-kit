@@ -1,8 +1,10 @@
 package server_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/spals/starter-kit/grpc/client"
 	"github.com/spals/starter-kit/grpc/proto"
@@ -13,10 +15,12 @@ import (
 
 const (
 	grpcPort = 18081
-)
-
-var (
-	grpcTarget = fmt.Sprintf("localhost:%d", grpcPort)
+	// The number of milliseconds between checks for the server start
+	// NOTE: Increase this number if debugging the server start sequence
+	serverStartTickMs = 10
+	// The number of milliseconds to wait for the server to start
+	// NOTE: Increase this number if debugging the server start sequence
+	serverStartTimeoutMs = 50
 )
 
 // ========== Suite Definition ==========
@@ -41,16 +45,19 @@ func (s *GrpcServerTestSuite) SetupSuite() {
 	}()
 
 	s.grpcServer = grpcServer
+
+	grpcTarget := fmt.Sprintf("localhost:%d", grpcPort)
 	s.grpcClient = client.NewGrpcClient(grpcTarget)
 }
 
 func (s *GrpcServerTestSuite) SetupTest() {
-	// assert := assert.New(s.T())
-	// // Wait 50 milliseconds for the HTTPServer to be ready
-	// assert.Eventually(func() bool {
-	// 	resp, err := http.Get(fmt.Sprintf("%s/ready", s.httpURLBase))
-	// 	return err == nil && resp.StatusCode == 200
-	// }, 50*time.Millisecond /*waitFor*/, 10*time.Millisecond /*tick*/)
+	assert := assert.New(s.T())
+	// Wait 50 milliseconds for the GrpcServer to be ready
+	assert.Eventually(func() bool {
+		client := proto.NewHealthClient(s.grpcClient.Conn())
+		resp, err := client.GetReady(context.Background(), &proto.ReadyRequest{})
+		return err == nil && resp.IsReady
+	}, serverStartTimeoutMs*time.Millisecond /*waitFor*/, serverStartTickMs*time.Millisecond /*tick*/)
 }
 
 func (s *GrpcServerTestSuite) TearDownSuite() {
@@ -68,9 +75,9 @@ func (s *GrpcServerTestSuite) TestGetConfig() {
 	assert := assert.New(s.T())
 
 	client := proto.NewConfigClient(s.grpcClient.Conn())
-	resp, err := client.GetConfig(s.grpcClient.Ctx(), &proto.ConfigRequest{})
+	resp, err := client.GetConfig(context.Background(), &proto.ConfigRequest{})
 	if assert.NoError(err) {
 		assert.False(resp.GetConfig().AssignRandomPort)
-		assert.Equal(grpcPort, resp.GetConfig().Port)
+		assert.Equal(grpcPort, int(resp.GetConfig().Port))
 	}
 }

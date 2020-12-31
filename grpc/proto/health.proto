@@ -13,10 +13,12 @@ service Health {
 }
 
 message LiveRequest {
+    bool full = 1;
 }
 
 message LiveResponse {
-    LivenessChecks liveness_checks = 1;
+    bool is_live = 1;
+    LivenessChecks liveness_checks = 2;
 }
 
 // Configuration used to check liveness for GrpcServer.
@@ -35,11 +37,13 @@ message LivenessChecks {
 }
 
 message ReadyRequest{
+    bool full = 1;
 }
 
 message ReadyResponse {
-    LivenessChecks liveness_checks = 1;
-    ReadinessChecks readiness_checks = 2;
+    bool is_ready = 1;
+    LivenessChecks liveness_checks = 2;
+    ReadinessChecks readiness_checks = 3;
 }
 
 // Configuration used to check readiness for GrpcServer

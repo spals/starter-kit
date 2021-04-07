@@ -12,14 +12,22 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	httpPort = 18080
+	// The number of milliseconds between checks for the server start
+	// NOTE: Increase this number if debugging the server start sequence
+	serverStartTickMs = 10
+	// The number of milliseconds to wait for the server to start
+	// NOTE: Increase this number if debugging the server start sequence
+	serverStartTimeoutMs = 50
+)
+
 // ========== Suite Definition ==========
 
 type HTTPServerTestSuite struct {
 	// Extends the testify suite package
 	// See https://github.com/stretchr/testify#suite-package
 	suite.Suite
-	// The HTTP port that will be used during testing
-	httpPort int
 	// A reference to the HTTPServer created for testing
 	httpServer *server.HTTPServer
 	// The base URL to be used by an HTTP client during testing
@@ -29,11 +37,10 @@ type HTTPServerTestSuite struct {
 // ========== Setup and Teardown ==========
 
 func (s *HTTPServerTestSuite) SetupSuite() {
-	s.httpPort = 18080
-	s.httpURLBase = fmt.Sprintf("http://localhost:%d", s.httpPort)
+	s.httpURLBase = fmt.Sprintf("http://localhost:%d", httpPort)
 
 	configMap := make(map[string]string)
-	configMap["PORT"] = fmt.Sprintf("%d", s.httpPort)
+	configMap["PORT"] = fmt.Sprintf("%d", httpPort)
 
 	testConfig := envconfig.MapLookuper(configMap)
 	httpServer, _ := server.InitializeHTTPServer(testConfig)
@@ -50,7 +57,7 @@ func (s *HTTPServerTestSuite) SetupTest() {
 	assert.Eventually(func() bool {
 		resp, err := http.Get(fmt.Sprintf("%s/ready", s.httpURLBase))
 		return err == nil && resp.StatusCode == 200
-	}, 50*time.Millisecond /*waitFor*/, 10*time.Millisecond /*tick*/)
+	}, serverStartTimeoutMs*time.Millisecond /*waitFor*/, serverStartTickMs*time.Millisecond /*tick*/)
 }
 
 func (s *HTTPServerTestSuite) TearDownSuite() {

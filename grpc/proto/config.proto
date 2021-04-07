@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option go_package = "github.com/spals/starter-kit/grpc/proto";
+option java_multiple_files = true;
+option java_package = "net.spals.starterkit.grpc.proto";
+option java_outer_classname = "ConfigProto";
+
+package config;
+
+import "proto/health.proto";
+
+service Config {  
+  rpc GetConfig (ConfigRequest) returns (ConfigResponse) {}
+}
+
+message ConfigRequest {
+}
+
+message ConfigResponse {
+  GrpcServerConfig config = 1;  
+}
+
+message GrpcServerConfig {
+    health.LivenessConfig  liveness_config  = 1;
+    health.ReadinessConfig readiness_config = 2;
+
+	bool  assign_random_port = 3;
+	int32 port               = 4;
+}

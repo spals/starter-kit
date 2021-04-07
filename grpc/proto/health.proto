@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+option go_package = "github.com/spals/starter-kit/grpc/proto";
+option java_multiple_files = true;
+option java_package = "net.spals.starterkit.grpc.proto";
+option java_outer_classname = "HealthProto";
+
+package health;
+
+service Health {  
+  rpc GetLive (LiveRequest) returns (LiveResponse) {}
+  rpc GetReady (ReadyRequest) returns (ReadyResponse) {}
+}
+
+message LiveRequest {
+    bool full = 1;
+}
+
+message LiveResponse {
+    bool is_live = 1;
+    LivenessChecks liveness_checks = 2;
+}
+
+// Configuration used to check liveness for GrpcServer.
+// This configures the LivenessChecks found below (e.g.
+// the max_go_routines informs the go_routines_count check)
+message LivenessConfig {
+    int32 max_go_routines = 1;
+}
+
+// Liveness checks for GrpcServer.
+// These are configured by the LivenessConfig above (e.g.
+// the max_go_routines informs the go_routines_count check)
+message LivenessChecks {
+    bool go_routines_count = 1;
+    string go_routines_count_message = 2;
+}
+
+message ReadyRequest{
+    bool full = 1;
+}
+
+message ReadyResponse {
+    bool is_ready = 1;
+    LivenessChecks liveness_checks = 2;
+    ReadinessChecks readiness_checks = 3;
+}
+
+// Configuration used to check readiness for GrpcServer
+// This configures the LivenessChecks found below
+message ReadinessConfig {
+}
+
+// Liveness checks for GrpcServer.
+// These are configured by the LivenessConfig above
+message ReadinessChecks {
+}

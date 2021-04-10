@@ -66,9 +66,9 @@ func buildHealthURL(isFull bool) string {
 }
 
 func configureLivenessChecks(config *proto.GrpcServerConfig, healthCheckHandler healthcheck.Handler) {
-	if config.GetLivenessConfig().GetMaxGoRoutines() > 0 {
-		healthCheckHandler.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(int(config.GetLivenessConfig().GetMaxGoRoutines())))
-	}
+	// if config.GetLivenessConfig().GetMaxGoRoutines() > 0 {
+	// 	healthCheckHandler.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(int(config.GetLivenessConfig().GetMaxGoRoutines())))
+	// }
 }
 
 func configureReadinessChecks(config *proto.GrpcServerConfig, healthCheckHandler healthcheck.Handler) {

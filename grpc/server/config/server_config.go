@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -30,12 +29,13 @@ func NewGrpcServerConfig(l envconfig.Lookuper) *proto.GrpcServerConfig {
 	}
 
 	dynamicConfig := dynamic.NewMessage(md)
-	dynamicConfig, err = makeConfig(dynamicConfig, l, "")
+	dynamicConfig, err = makeConfig(dynamicConfig, l)
 
 	if err != nil {
 		log.Fatalf("GrpcServerConfig parse failure: %s", err)
 		os.Exit(1)
 	}
+	dynamicConfig.ConvertTo(&serverConfig)
 
 	json := jsonpb.Marshaler{Indent: "  "}
 	configJSON, _ := json.MarshalToString(&serverConfig)
@@ -44,15 +44,19 @@ func NewGrpcServerConfig(l envconfig.Lookuper) *proto.GrpcServerConfig {
 	return &serverConfig
 }
 
-func makeConfig(dynamicMessage *dynamic.Message, l envconfig.Lookuper, prefix string) (*dynamic.Message, error) {
+func makeConfig(dynamicMessage *dynamic.Message, l envconfig.Lookuper) (*dynamic.Message, error) {
 	for _, fd := range dynamicMessage.GetMessageDescriptor().GetFields() {
 		if fd.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
 			// dynamicMessage.SetField(fd, makeConfig)
 		} else {
-			configKey := fmt.Sprintf("%s%s", strings.ToUpper(prefix), strings.ToUpper(fd.GetName()))
-			configValue, _ := l.Lookup(configKey)
-			convertedConfigValue := convertValue(fd, configValue)
-			dynamicMessage.SetField(fd, convertedConfigValue)
+			configKey := strings.ToUpper(fd.GetName())
+			configValue, configFound := l.Lookup(configKey)
+			log.Printf("GrpcServerConfig found %s as value \"%s\"", configKey, configValue)
+
+			if configFound {
+				convertedConfigValue := convertValue(fd, configValue)
+				dynamicMessage.SetField(fd, convertedConfigValue)
+			}
 		}
 
 	}

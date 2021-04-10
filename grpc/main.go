@@ -4,16 +4,16 @@ import (
 	"log"
 	"os"
 
-	"github.com/spals/starter-kit/grpc/proto"
+	"github.com/sethvargo/go-envconfig"
 	"github.com/spals/starter-kit/grpc/server"
 )
 
 func main() {
+	// Parse the GrpcServer config from environment variables prefixed with GRPC_SERVER (e.g. GRPC_SERVER_PORT)
+	envVars := envconfig.PrefixLookuper("GRPC_SERVER_", envconfig.OsLookuper())
 
 	log.Print("Initializing GrpcServer")
-	config := &proto.GrpcServerConfig{}
-
-	grpcServer, err := server.InitializeGrpcServer(config)
+	grpcServer, err := server.InitializeGrpcServer(envVars)
 	if err != nil {
 		log.Fatalf("GrpcServer initialization failure: %s", err)
 		os.Exit(1)

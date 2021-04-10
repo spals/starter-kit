@@ -41,9 +41,9 @@ func (s *HTTPServerTestSuite) SetupSuite() {
 
 	configMap := make(map[string]string)
 	configMap["PORT"] = fmt.Sprintf("%d", httpPort)
+	testLookuper := envconfig.MapLookuper(configMap)
 
-	testConfig := envconfig.MapLookuper(configMap)
-	httpServer, _ := server.InitializeHTTPServer(testConfig)
+	httpServer, _ := server.InitializeHTTPServer(testLookuper)
 	go func() {
 		httpServer.Start()
 	}()

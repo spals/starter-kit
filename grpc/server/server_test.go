@@ -81,7 +81,6 @@ func (s *GrpcServerTestSuite) TestGetConfig() {
 	client := proto.NewConfigClient(s.grpcClient.Conn())
 	resp, err := client.GetConfig(context.Background(), &proto.ConfigRequest{})
 	if assert.NoError(err) {
-		assert.False(resp.GetConfig().AssignRandomPort)
 		assert.Equal(grpcPort, int(resp.GetConfig().Port))
 	}
 }

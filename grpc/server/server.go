@@ -66,7 +66,7 @@ func (s *GrpcServer) Shutdown() {
 func (s *GrpcServer) makeListener() net.Listener {
 	// If a random port is requested, then find an open port
 	// See https://stackoverflow.com/questions/43424787/how-to-use-next-available-port-in-http-listenandserve
-	if s.config.GetAssignRandomPort() || s.config.GetPort() == 0 {
+	if s.config.GetPort() == 0 {
 		log.Print("Finding available random port")
 		listener, err := net.Listen("tcp", ":0")
 		if err != nil {

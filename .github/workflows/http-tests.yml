@@ -1,4 +1,4 @@
-name: Go Tests CI
+name: HTTP Tests CI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-
+  
   build-http:
     runs-on: ubuntu-latest
     env: 

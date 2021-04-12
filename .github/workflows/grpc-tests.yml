@@ -8,7 +8,7 @@ on:
 
 jobs:
   
-  build-http:
+  build-grpc:
     runs-on: ubuntu-latest
     env: 
       GO111MODULE: on

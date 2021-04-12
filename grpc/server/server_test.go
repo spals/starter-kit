@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sethvargo/go-envconfig"
 	"github.com/spals/starter-kit/grpc/client"
 	"github.com/spals/starter-kit/grpc/proto"
 	"github.com/spals/starter-kit/grpc/server"
@@ -38,8 +39,11 @@ type GrpcServerTestSuite struct {
 // ========== Setup and Teardown ==========
 
 func (s *GrpcServerTestSuite) SetupSuite() {
-	testConfig := proto.GrpcServerConfig{Port: grpcPort}
-	grpcServer, _ := server.InitializeGrpcServer(&testConfig)
+	configMap := make(map[string]string)
+	configMap["PORT"] = fmt.Sprintf("%d", grpcPort)
+	testLookuper := envconfig.MapLookuper(configMap)
+
+	grpcServer, _ := server.InitializeGrpcServer(testLookuper)
 	go func() {
 		grpcServer.Start()
 	}()
@@ -77,7 +81,6 @@ func (s *GrpcServerTestSuite) TestGetConfig() {
 	client := proto.NewConfigClient(s.grpcClient.Conn())
 	resp, err := client.GetConfig(context.Background(), &proto.ConfigRequest{})
 	if assert.NoError(err) {
-		assert.False(resp.GetConfig().AssignRandomPort)
 		assert.Equal(grpcPort, int(resp.GetConfig().Port))
 	}
 }

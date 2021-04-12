@@ -1,37 +1,28 @@
 package impl_test
 
-import (
-	"context"
-	"testing"
+// func TestGetLive(t *testing.T) {
+// 	assert := assert.New(t)
 
-	"github.com/spals/starter-kit/grpc/proto"
-	"github.com/spals/starter-kit/grpc/server/impl"
-	"github.com/stretchr/testify/assert"
-)
+// 	livenessConfig := proto.LivenessConfig{}
+// 	config := proto.GrpcServerConfig{LivenessConfig: &livenessConfig}
 
-func TestGetLive(t *testing.T) {
-	assert := assert.New(t)
+// 	healthServer := impl.NewHealthServer(&config)
+// 	resp, err := healthServer.GetLive(context.Background(), &proto.LiveRequest{})
+// 	if assert.NoError(err) {
+// 		assert.True(resp.IsLive)
+// 	}
+// }
 
-	livenessConfig := proto.LivenessConfig{}
-	config := proto.GrpcServerConfig{LivenessConfig: &livenessConfig}
+// func TestGetReady(t *testing.T) {
+// 	assert := assert.New(t)
 
-	healthServer := impl.NewHealthServer(&config)
-	resp, err := healthServer.GetLive(context.Background(), &proto.LiveRequest{})
-	if assert.NoError(err) {
-		assert.True(resp.IsLive)
-	}
-}
+// 	livenessConfig := proto.LivenessConfig{}
+// 	readinessConfig := proto.ReadinessConfig{}
+// 	config := proto.GrpcServerConfig{LivenessConfig: &livenessConfig, ReadinessConfig: &readinessConfig}
 
-func TestGetReady(t *testing.T) {
-	assert := assert.New(t)
-
-	livenessConfig := proto.LivenessConfig{}
-	readinessConfig := proto.ReadinessConfig{}
-	config := proto.GrpcServerConfig{LivenessConfig: &livenessConfig, ReadinessConfig: &readinessConfig}
-
-	healthServer := impl.NewHealthServer(&config)
-	resp, err := healthServer.GetReady(context.Background(), &proto.ReadyRequest{})
-	if assert.NoError(err) {
-		assert.True(resp.IsReady)
-	}
-}
+// 	healthServer := impl.NewHealthServer(&config)
+// 	resp, err := healthServer.GetReady(context.Background(), &proto.ReadyRequest{})
+// 	if assert.NoError(err) {
+// 		assert.True(resp.IsReady)
+// 	}
+// }

@@ -6,16 +6,18 @@
 package server
 
 import (
-	"github.com/spals/starter-kit/grpc/proto"
+	"github.com/sethvargo/go-envconfig"
+	"github.com/spals/starter-kit/grpc/server/config"
 	"github.com/spals/starter-kit/grpc/server/impl"
 )
 
 // Injectors from wire.go:
 
 // InitializeGrpcServer ...
-func InitializeGrpcServer(config *proto.GrpcServerConfig) (*GrpcServer, error) {
-	configServer := impl.NewConfigServer(config)
-	healthServer := impl.NewHealthServer(config)
-	grpcServer := NewGrpcServer(config, configServer, healthServer)
+func InitializeGrpcServer(l envconfig.Lookuper) (*GrpcServer, error) {
+	grpcServerConfig := config.NewGrpcServerConfig(l)
+	configServer := impl.NewConfigServer(grpcServerConfig)
+	healthServer := impl.NewHealthServer(grpcServerConfig)
+	grpcServer := NewGrpcServer(grpcServerConfig, configServer, healthServer)
 	return grpcServer, nil
 }

@@ -7,8 +7,6 @@ option java_outer_classname = "ConfigProto";
 
 package config;
 
-import "proto/health.proto";
-
 service Config {  
   rpc GetConfig (ConfigRequest) returns (ConfigResponse) {}
 }
@@ -21,9 +19,8 @@ message ConfigResponse {
 }
 
 message GrpcServerConfig {
-    health.LivenessConfig  liveness_config  = 1;
-    health.ReadinessConfig readiness_config = 2;
+  // LivenessConfig  liveness  = 1;
+  // ReadinessConfig readiness = 2;
 
-	bool  assign_random_port = 3;
-	int32 port               = 4;
+	int32 port               = 3;
 }

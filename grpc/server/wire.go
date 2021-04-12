@@ -4,13 +4,16 @@ package server
 
 import (
 	"github.com/google/wire"
-	"github.com/spals/starter-kit/grpc/proto"
+	"github.com/sethvargo/go-envconfig"
+	"github.com/spals/starter-kit/grpc/server/config"
 	"github.com/spals/starter-kit/grpc/server/impl"
 )
 
 // InitializeGrpcServer ...
-func InitializeGrpcServer(config *proto.GrpcServerConfig) (*GrpcServer, error) {
+func InitializeGrpcServer(l envconfig.Lookuper) (*GrpcServer, error) {
 	wire.Build(
+		// Configuration
+		config.NewGrpcServerConfig,
 		// Service Implementations
 		impl.NewConfigServer,
 		impl.NewHealthServer,

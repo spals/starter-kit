@@ -1,4 +1,4 @@
-name: Go
+name: Go Tests CI
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
       with:
         go-version: 1.15
 
-    - name: Build
-      run: go build -v ./...
+    - name: Build HTTP
+      run: go build -v ./http/...
 
-    - name: Test
-      run: go test -v ./...
+    - name: Test HTTP
+      run: go test -v ./http/...

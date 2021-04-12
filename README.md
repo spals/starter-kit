@@ -1,4 +1,9 @@
+[![][Tests img]][Tests]
 [![][License img]][License]
+
+[Tests]:https://github.com/spals/starter-kit/actions/workflows/tests.yml?query=branch%3Amain
+[Tests img]:https://github.com/spals/starter-kit/actions/workflows/tests.yml/badge.svg
+
 
 [License]:LICENSE
 [License img]:https://img.shields.io/badge/license-BSD3-blue.svg

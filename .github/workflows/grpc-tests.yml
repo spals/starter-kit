@@ -43,7 +43,7 @@ jobs:
 #          %LocalAppData%\go-build
         key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/grpc/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
 
     - name: Run Build
       run: cd ${{ github.workspace }}/grpc && go build -v ./...

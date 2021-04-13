@@ -43,7 +43,7 @@ jobs:
 #          %LocalAppData%\go-build
         key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/http/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
 
     - name: Run Build
       run: cd ${{ github.workspace }}/http && go build -v ./...

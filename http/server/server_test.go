@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"testing"
 	"time"
@@ -13,7 +14,6 @@ import (
 )
 
 const (
-	httpPort = 18080
 	// The number of milliseconds between checks for the server start
 	// NOTE: Increase this number if debugging the server start sequence
 	serverStartTickMs = 10
@@ -37,10 +37,7 @@ type HTTPServerTestSuite struct {
 // ========== Setup and Teardown ==========
 
 func (s *HTTPServerTestSuite) SetupSuite() {
-	s.httpURLBase = fmt.Sprintf("http://localhost:%d", httpPort)
-
 	configMap := make(map[string]string)
-	configMap["PORT"] = fmt.Sprintf("%d", httpPort)
 	testLookuper := envconfig.MapLookuper(configMap)
 
 	httpServer, _ := server.InitializeHTTPServer(testLookuper)
@@ -55,6 +52,14 @@ func (s *HTTPServerTestSuite) SetupTest() {
 	assert := assert.New(s.T())
 	// Wait 50 milliseconds for the HTTPServer to be ready
 	assert.Eventually(func() bool {
+		if s.httpServer.ActivePort() == 0 {
+			log.Print("No active port available for HTTP testing")
+			return false
+		} else if len(s.httpURLBase) == 0 {
+			s.httpURLBase = fmt.Sprintf("http://localhost:%d", s.httpServer.ActivePort())
+			log.Printf("Using base URL %s for HTTP testing", s.httpURLBase)
+		}
+
 		resp, err := http.Get(fmt.Sprintf("%s/ready", s.httpURLBase))
 		return err == nil && resp.StatusCode == 200
 	}, serverStartTimeoutMs*time.Millisecond /*waitFor*/, serverStartTickMs*time.Millisecond /*tick*/)

@@ -40,8 +40,8 @@ jobs:
           ~/go/pkg/mod
           ~/.cache/go-build
           ~/Library/Caches/go-build
-          %LocalAppData%\go-build
-        key: ${{ runner.os }}-go-${{ hashFiles('**/grpc/go.sum') }}
+#          %LocalAppData%\go-build
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/grpc/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
 

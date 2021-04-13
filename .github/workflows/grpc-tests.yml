@@ -12,9 +12,11 @@ jobs:
     strategy:
         matrix:
           go-version: [1.15.x, 1.16.x]
+          os: [ubuntu-latest, macos-latest]
+#          NOTE: If enabling Windows builds, also enable Windows build cache below
 #          os: [ubuntu-latest, macos-latest, windows-latest]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     env: 
       GO111MODULE: on

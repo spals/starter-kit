@@ -33,6 +33,14 @@ func NewGrpcServer(
 	return grpcServer
 }
 
+// ActivePort ...
+// Returns the port on which the server is actively listening.
+// This is useful as the server is capable or using a randomly assigned port.
+func (s *GrpcServer) ActivePort() int {
+	// Note that the port will be re-written in the configuration if a random one is used.
+	return int(s.config.GetPort())
+}
+
 // Start ...
 func (s *GrpcServer) Start() {
 	// Include a graceful server shutdown sequence
@@ -41,7 +49,7 @@ func (s *GrpcServer) Start() {
 	signal.Notify(grpcServerStopped, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	listener := s.makeListener()
-	log.Printf("Starting GrpcServer on port %d", s.config.GetPort())
+	log.Printf("GrpcServer listening on port :%d", s.config.GetPort())
 
 	go func() {
 		if err := s.delegate.Serve(listener); err != nil {

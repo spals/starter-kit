@@ -3,6 +3,7 @@ package server_test
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 )
 
 const (
-	grpcPort = 18081
 	// The number of milliseconds between checks for the server start
 	// NOTE: Increase this number if debugging the server start sequence
 	serverStartTickMs = 10
@@ -40,7 +40,6 @@ type GrpcServerTestSuite struct {
 
 func (s *GrpcServerTestSuite) SetupSuite() {
 	configMap := make(map[string]string)
-	configMap["PORT"] = fmt.Sprintf("%d", grpcPort)
 	testLookuper := envconfig.MapLookuper(configMap)
 
 	grpcServer, _ := server.InitializeGrpcServer(testLookuper)
@@ -49,15 +48,21 @@ func (s *GrpcServerTestSuite) SetupSuite() {
 	}()
 
 	s.grpcServer = grpcServer
-
-	grpcTarget := fmt.Sprintf("localhost:%d", grpcPort)
-	s.grpcClient = client.NewGrpcClient(grpcTarget)
 }
 
 func (s *GrpcServerTestSuite) SetupTest() {
 	assert := assert.New(s.T())
 	// Wait 50 milliseconds for the GrpcServer to be ready
 	assert.Eventually(func() bool {
+		if s.grpcServer.ActivePort() == 0 {
+			log.Print("No active port available for Grpc testing")
+			return false
+		} else if s.grpcClient == nil {
+			grpcTarget := fmt.Sprintf("localhost:%d", s.grpcServer.ActivePort())
+			s.grpcClient = client.NewGrpcClient(grpcTarget)
+			log.Printf("Using target %s for Grpc testing", grpcTarget)
+		}
+
 		client := proto.NewHealthClient(s.grpcClient.Conn())
 		resp, err := client.GetReady(context.Background(), &proto.ReadyRequest{})
 		return err == nil && resp.IsReady
@@ -81,6 +86,6 @@ func (s *GrpcServerTestSuite) TestGetConfig() {
 	client := proto.NewConfigClient(s.grpcClient.Conn())
 	resp, err := client.GetConfig(context.Background(), &proto.ConfigRequest{})
 	if assert.NoError(err) {
-		assert.Equal(grpcPort, int(resp.GetConfig().Port))
+		assert.Equal(s.grpcServer.ActivePort(), int(resp.GetConfig().Port))
 	}
 }

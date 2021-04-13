@@ -12,4 +12,5 @@ require (
 	github.com/stretchr/testify v1.5.1
 	google.golang.org/grpc v1.34.0
 	google.golang.org/protobuf v1.25.1-0.20200805231151-a709e31e5d12
+	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
 )

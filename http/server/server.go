@@ -50,6 +50,14 @@ func NewHTTPServer(
 	return httpServer
 }
 
+// ActivePort ...
+// Returns the port on which the server is actively listening.
+// This is useful as the server is capable or using a randomly assigned port.
+func (s *HTTPServer) ActivePort() int {
+	// Note that the port will be re-written in the configuration if a random one is used.
+	return s.config.Port
+}
+
 // Start ...
 func (s *HTTPServer) Start() {
 	// Include a graceful server shutdown sequence
@@ -58,21 +66,18 @@ func (s *HTTPServer) Start() {
 	signal.Notify(httpServerStopped, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	customListener := s.makeCustomListener()
-	if customListener == nil {
-		log.Printf("Starting HTTPServer on port %d", s.config.Port)
-	} else {
-		log.Printf("Starting HTTPServer on port %d", customListener.Addr().(*net.TCPAddr).Port)
-	}
 
 	go func() {
 		// If we do not have a custom listener, then use the default listener
 		if customListener == nil {
 			s.delegate.Addr = fmt.Sprint(":", s.config.Port)
+			log.Printf("HTTPServer listening on port %s", s.delegate.Addr)
 			if err := s.delegate.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				log.Fatalf("HTTPServer start failure with default listener: %s", err)
 				os.Exit(2)
 			}
 		} else {
+			log.Printf("HTTPServer listening on port :%d", customListener.Addr().(*net.TCPAddr).Port)
 			if err := s.delegate.Serve(customListener); err != nil && err != http.ErrServerClosed {
 				log.Fatalf("HTTPServer start failure with custom listener: %s", err)
 				os.Exit(2)

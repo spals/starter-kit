@@ -1,15 +1,15 @@
+[![][License img]][License]
 [![][HTTP Tests img]][HTTP Tests]
 [![][Grpc Tests img]][Grpc Tests]
-[![][License img]][License]
+
+[License]:LICENSE
+[License img]:https://img.shields.io/badge/License-BSD3-blue.svg
 
 [HTTP Tests]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml?query=branch%3Amain
 [HTTP Tests img]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml/badge.svg
 
 [Grpc Tests]:https://github.com/spals/starter-kit/actions/workflows/grpc-tests.yml?query=branch%3Amain
 [Grpc Tests img]:https://github.com/spals/starter-kit/actions/workflows/grpc-tests.yml/badge.svg
-
-[License]:LICENSE
-[License img]:https://img.shields.io/badge/license-BSD3-blue.svg
 
 # Go Starter Kit
 

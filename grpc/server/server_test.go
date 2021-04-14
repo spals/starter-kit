@@ -21,7 +21,7 @@ const (
 	serverStartTickMs = 10
 	// The number of milliseconds to wait for the server to start
 	// NOTE: Increase this number if debugging the server start sequence
-	serverStartTimeoutMs = 50
+	serverStartTimeoutMs = 100
 )
 
 // ========== Suite Definition ==========
@@ -52,7 +52,7 @@ func (s *GrpcServerTestSuite) SetupSuite() {
 
 func (s *GrpcServerTestSuite) SetupTest() {
 	assert := assert.New(s.T())
-	// Wait 50 milliseconds for the GrpcServer to be ready
+	// Wait 100 milliseconds for the GrpcServer to be ready
 	assert.Eventually(func() bool {
 		if s.grpcServer.ActivePort() == 0 {
 			log.Print("No active port available for Grpc testing")

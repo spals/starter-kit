@@ -43,12 +43,12 @@ jobs:
     - name: Lint Grpc
       uses: golangci/golangci-lint-action@v2
       with:
-        key: golangci-lint.cache-{working-directory}-{platform-arch}-{interval_number}-{go.mod_hash}
-        restore-keys: |
-          golangci-lint.cache-{working-directory}-{interval_number}-
-          golangci-lint.cache-{working-directory}-
+        # key: golangci-lint.cache-{working-directory}-{platform-arch}-{interval_number}-{go.mod_hash}
+        # restore-keys: |
+        #   golangci-lint.cache-{working-directory}-{interval_number}-
+        #   golangci-lint.cache-{working-directory}-
         skip-build-cache: false
         skip-go-installation: true
         skip-pkg-cache: false
         version: latest
-        working-directory: grpc
+        working-directory: grpc/

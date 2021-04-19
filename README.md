@@ -1,5 +1,5 @@
 [![][License img]][License]
-[![][Golang Lint img]]Golang Lint]
+[![][Golang Lint img]][Golang Lint]
 [![][HTTP Tests img]][HTTP Tests]
 [![][Grpc Tests img]][Grpc Tests]
 

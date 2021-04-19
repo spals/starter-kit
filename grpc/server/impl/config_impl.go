@@ -17,8 +17,13 @@ type ConfigServer struct {
 // ========== Constructor ==========
 
 // NewConfigServer ...
-func NewConfigServer(config *proto.GrpcServerConfig) *ConfigServer {
+func NewConfigServer(
+	config *proto.GrpcServerConfig,
+	healthRegistry *HealthRegistry,
+) *ConfigServer {
 	s := &ConfigServer{config: config}
+	healthRegistry.MarkAsServing(s)
+
 	return s
 }
 

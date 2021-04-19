@@ -16,8 +16,8 @@ import (
 // InitializeGrpcServer ...
 func InitializeGrpcServer(l envconfig.Lookuper) (*GrpcServer, error) {
 	grpcServerConfig := config.NewGrpcServerConfig(l)
-	configServer := impl.NewConfigServer(grpcServerConfig)
-	healthServer := impl.NewHealthServer(grpcServerConfig)
-	grpcServer := NewGrpcServer(grpcServerConfig, configServer, healthServer)
+	healthRegistry := impl.NewHealthRegistry()
+	configServer := impl.NewConfigServer(grpcServerConfig, healthRegistry)
+	grpcServer := NewGrpcServer(grpcServerConfig, healthRegistry, configServer)
 	return grpcServer, nil
 }

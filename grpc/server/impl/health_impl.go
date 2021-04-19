@@ -2,100 +2,81 @@ package impl
 
 import (
 	"context"
-	"net/http"
+	"fmt"
+	"log"
+	"strings"
 
-	"github.com/heptiolabs/healthcheck"
-	"github.com/spals/starter-kit/grpc/proto"
+	"google.golang.org/grpc/health"
+	healthproto "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-// HealthServer ...
-// Implementation of auto-generated HealthServer Grpc framework
-type HealthServer struct {
-	proto.UnimplementedHealthServer
+const (
+	ROOT_SERVICE = ""
+)
 
-	healthCheckHandler healthcheck.Handler
+// HealthRegistry ...
+// Implementation of auto-generated ConfigServer Grpc framework
+// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md
+type HealthRegistry struct {
+	healthproto.UnimplementedHealthServer
+
+	delegate *health.Server
 }
 
 // ========== Constructor ==========
 
-// NewHealthServer ...
-func NewHealthServer(config *proto.GrpcServerConfig) *HealthServer {
-	healthCheckHandler := healthcheck.NewHandler()
-	configureLivenessChecks(config, healthCheckHandler)
-	configureReadinessChecks(config, healthCheckHandler)
+// NewHealthRegistry ...
+func NewHealthRegistry() *HealthRegistry {
+	healthServer := health.NewServer()
 
-	s := &HealthServer{healthCheckHandler: healthCheckHandler}
-	return s
+	r := &HealthRegistry{delegate: healthServer}
+	return r
 }
 
 // ========== Implementation Methods ==========
 // These are required implementations based on the grpc service
-// definition in config.proto
+// definition in grpc_health_v1/health.proto
 
-// GetLive ...
-func (s *HealthServer) GetLive(ctx context.Context, req *proto.LiveRequest) (*proto.LiveResponse, error) {
-	w := newHealthResponseWriter()
-	r, _ := http.NewRequest("GET", buildHealthURL(req.GetFull()), nil)
-	s.healthCheckHandler.LiveEndpoint(w, r)
-
-	resp := proto.LiveResponse{IsLive: w.status == http.StatusOK}
-	return &resp, nil
+// Check ...
+func (r *HealthRegistry) Check(ctx context.Context, req *healthproto.HealthCheckRequest) (*healthproto.HealthCheckResponse, error) {
+	return r.delegate.Check(ctx, req)
 }
 
-// GetReady ...
-func (s *HealthServer) GetReady(ctx context.Context, req *proto.ReadyRequest) (*proto.ReadyResponse, error) {
-	w := newHealthResponseWriter()
-	r, _ := http.NewRequest("GET", buildHealthURL(req.GetFull()), nil)
-	s.healthCheckHandler.ReadyEndpoint(w, r)
-
-	resp := proto.ReadyResponse{IsReady: w.status == http.StatusOK}
-	return &resp, nil
+// Watch ...
+func (r *HealthRegistry) Watch(req *healthproto.HealthCheckRequest, stream healthproto.Health_WatchServer) error {
+	return r.delegate.Watch(req, stream)
 }
 
-// ========== Private Helpers ==========
+// ========== Public Helpers ==========
 
-func buildHealthURL(isFull bool) string {
-	url := "local/?full="
-	if isFull {
-		url += "1"
-	} else {
-		url += "0"
-	}
-
-	return url
+// MarkAsNotServing ...
+func (r *HealthRegistry) MarkAsNotServing(service interface{}) {
+	serviceName := serviceName(service)
+	log.Printf("Marking service '%s' as NOT SERVING", serviceName)
+	r.delegate.SetServingStatus(serviceName, healthproto.HealthCheckResponse_NOT_SERVING)
 }
 
-func configureLivenessChecks(config *proto.GrpcServerConfig, healthCheckHandler healthcheck.Handler) {
-	// if config.GetLivenessConfig().GetMaxGoRoutines() > 0 {
-	// 	healthCheckHandler.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(int(config.GetLivenessConfig().GetMaxGoRoutines())))
-	// }
+// MarkAsServing ...
+func (r *HealthRegistry) MarkAsServing(service interface{}) {
+	serviceName := serviceName(service)
+	log.Printf("Marking service '%s' as SERVING", serviceName)
+	r.delegate.SetServingStatus(serviceName, healthproto.HealthCheckResponse_SERVING)
 }
 
-func configureReadinessChecks(config *proto.GrpcServerConfig, healthCheckHandler healthcheck.Handler) {
-
+// Resume ...
+// See health.Server.Resume
+func (r *HealthRegistry) Resume() {
+	r.delegate.Resume()
 }
 
-type healthResponseWriter struct {
-	http.ResponseWriter
-
-	headers http.Header
-	body    []byte
-	status  int
+// Shutdown ...
+// See health.Server.Shutdown
+func (r *HealthRegistry) Shutdown() {
+	r.delegate.Shutdown()
 }
 
-func newHealthResponseWriter() *healthResponseWriter {
-	return &healthResponseWriter{headers: make(http.Header)}
-}
+// ========== Public Helpers ==========
 
-func (w *healthResponseWriter) Header() http.Header {
-	return w.headers
-}
-
-func (w *healthResponseWriter) Write(body []byte) (int, error) {
-	w.body = body
-	return len(body), nil
-}
-
-func (w *healthResponseWriter) WriteHeader(status int) {
-	w.status = status
+func serviceName(service interface{}) string {
+	return strings.ReplaceAll(fmt.Sprintf("%T", service), "*", "")
 }

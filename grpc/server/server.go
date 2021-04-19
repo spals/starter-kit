@@ -11,25 +11,29 @@ import (
 	"github.com/spals/starter-kit/grpc/proto"
 	"github.com/spals/starter-kit/grpc/server/impl"
 	"google.golang.org/grpc"
+	healthproto "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 // GrpcServer ...
 type GrpcServer struct {
-	config   *proto.GrpcServerConfig
-	delegate *grpc.Server
+	config         *proto.GrpcServerConfig
+	healthRegistry *impl.HealthRegistry // Keep a reference to the health registry so we can shut it down
+	delegate       *grpc.Server
 }
 
 // NewGrpcServer ...
 func NewGrpcServer(
 	config *proto.GrpcServerConfig,
+	healthRegistry *impl.HealthRegistry,
 	configServer *impl.ConfigServer,
-	healthServer *impl.HealthServer,
 ) *GrpcServer {
 	delegate := grpc.NewServer()
-	proto.RegisterConfigServer(delegate, configServer)
-	proto.RegisterHealthServer(delegate, healthServer)
+	healthproto.RegisterHealthServer(delegate, healthRegistry)
 
-	grpcServer := &GrpcServer{config, delegate}
+	// Register any service implementations
+	proto.RegisterConfigServer(delegate, configServer)
+
+	grpcServer := &GrpcServer{config, healthRegistry, delegate}
 	return grpcServer
 }
 
@@ -67,6 +71,7 @@ func (s *GrpcServer) Start() {
 // Shutdown ...
 func (s *GrpcServer) Shutdown() {
 	log.Print("Shutting down GrpcServer")
+	s.healthRegistry.Shutdown()
 	s.delegate.GracefulStop()
 	log.Print("GrpcServer shutdown")
 }

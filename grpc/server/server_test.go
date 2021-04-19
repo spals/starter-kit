@@ -13,6 +13,7 @@ import (
 	"github.com/spals/starter-kit/grpc/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	healthproto "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 const (
@@ -63,9 +64,9 @@ func (s *GrpcServerTestSuite) SetupTest() {
 			log.Printf("Using target %s for Grpc testing", grpcTarget)
 		}
 
-		client := proto.NewHealthClient(s.grpcClient.Conn())
-		resp, err := client.GetReady(context.Background(), &proto.ReadyRequest{})
-		return err == nil && resp.IsReady
+		healthClient := healthproto.NewHealthClient(s.grpcClient.Conn())
+		resp, err := healthClient.Check(context.Background(), &healthproto.HealthCheckRequest{})
+		return err == nil && resp.GetStatus() == healthproto.HealthCheckResponse_SERVING
 	}, serverStartTimeoutMs*time.Millisecond /*waitFor*/, serverStartTickMs*time.Millisecond /*tick*/)
 }
 
@@ -83,9 +84,20 @@ func TestGrpcServerTestSuite(t *testing.T) {
 func (s *GrpcServerTestSuite) TestGetConfig() {
 	assert := assert.New(s.T())
 
-	client := proto.NewConfigClient(s.grpcClient.Conn())
-	resp, err := client.GetConfig(context.Background(), &proto.ConfigRequest{})
+	configClient := proto.NewConfigClient(s.grpcClient.Conn())
+	resp, err := configClient.GetConfig(context.Background(), &proto.ConfigRequest{})
 	if assert.NoError(err) {
 		assert.Equal(s.grpcServer.ActivePort(), int(resp.GetConfig().Port))
+	}
+}
+
+func (s *GrpcServerTestSuite) TestConfigServiceHealthCheck() {
+	assert := assert.New(s.T())
+
+	healthClient := healthproto.NewHealthClient(s.grpcClient.Conn())
+	resp, err := healthClient.Check(context.Background(), &healthproto.HealthCheckRequest{Service: "impl.ConfigServer"})
+
+	if assert.NoError(err) {
+		assert.Equal(healthproto.HealthCheckResponse_SERVING, resp.GetStatus())
 	}
 }

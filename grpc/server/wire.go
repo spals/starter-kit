@@ -14,9 +14,10 @@ func InitializeGrpcServer(l envconfig.Lookuper) (*GrpcServer, error) {
 	wire.Build(
 		// Configuration
 		config.NewGrpcServerConfig,
+		// Health Registry
+		impl.NewHealthRegistry,
 		// Service Implementations
 		impl.NewConfigServer,
-		impl.NewHealthServer,
 		// Server
 		NewGrpcServer,
 	)

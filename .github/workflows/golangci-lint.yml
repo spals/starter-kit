@@ -1,0 +1,60 @@
+name: Golang CI Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  
+  golangci-lint:
+    strategy:
+        matrix:
+          go-version: [1.15.x, 1.16.x]
+          os: [ubuntu-latest, macos-latest]
+#          NOTE: If enabling Windows builds, also enable Windows build cache below
+#          os: [ubuntu-latest, macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    env: 
+      GO111MODULE: on
+
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Setup Build Cache
+      uses: actions/cache@v2
+      with:
+        # In order:
+        # * Module download cache
+        # * Build cache (Linux)
+        # * Build cache (Mac)
+        # * Build cache (Windows)
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+          ~/Library/Caches/go-build
+#          %LocalAppData%\go-build
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/grpc/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+    - name: Lint Http
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: latest
+        working-directory: http
+
+    - name: Lint Grpc
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: latest
+        working-directory: grpc

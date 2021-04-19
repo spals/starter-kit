@@ -43,6 +43,9 @@ jobs:
     - name: Lint Grpc
       uses: golangci/golangci-lint-action@v2
       with:
+        key: golangci-lint.cache-${{ runner.os }}-${{ matrix.go-version }}-${{ hashFiles('**/grpc/go.sum') }}
+        restore-keys: |
+          golangci-lint.cache-${{ runner.os }}-${{ matrix.go-version }}-
         skip-build-cache: false
         skip-go-installation: true
         skip-pkg-cache: false

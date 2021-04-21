@@ -46,9 +46,9 @@ jobs:
           ~/.cache/go-build
           ~/Library/Caches/go-build
 #          %LocalAppData%\go-build
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/grpc/go.sum') }}
+        key: ${{ runner.os }}-gotest-${{ matrix.go-version }}-${{ hashFiles('**/grpc/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          ${{ runner.os }}-gotest-${{ matrix.go-version }}-
 
     - name: Run Build
       run: go build -v ./...

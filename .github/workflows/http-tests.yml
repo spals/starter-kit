@@ -6,8 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+defaults:
+  run:
+    working-directory: ./http
+
 jobs:
-  
   build-http:
     strategy:
       matrix:
@@ -43,12 +46,12 @@ jobs:
           ~/.cache/go-build
           ~/Library/Caches/go-build
 #          %LocalAppData%\go-build
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/http/go.sum') }}
+        key: ${{ runner.os }}-gotest-${{ matrix.go-version }}-${{ hashFiles('**/http/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          ${{ runner.os }}-gotest-${{ matrix.go-version }}-
 
     - name: Run Build
-      run: cd ${{ github.workspace }}/http && go build -v ./...
+      run: go build -v ./...
 
     - name: Run Tests
-      run: cd ${{ github.workspace }}/http && go test -v ./...
+      run: go test -v ./...

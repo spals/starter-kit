@@ -6,15 +6,18 @@ on:
   pull_request:
     branches: [ main ]
 
+defaults:
+  run:
+    working-directory: ./http
+
 jobs:
-  
   build-http:
     strategy:
       matrix:
         go-version: [1.15.x, 1.16.x]
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest, ubuntu-latest]
 #        NOTE: If enabling Windows builds, also enable Windows build cache below
-#        os: [ubuntu-latest, macos-latest, windows-latest]
+#        os: [macos-latest, ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -35,20 +38,20 @@ jobs:
       with:
         # In order:
         # * Module download cache
-        # * Build cache (Linux)
         # * Build cache (Mac)
+        # * Build cache (Linux)
         # * Build cache (Windows)
         path: |
           ~/go/pkg/mod
-          ~/.cache/go-build
           ~/Library/Caches/go-build
+          ~/.cache/go-build
 #          %LocalAppData%\go-build
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/http/go.sum') }}
+        key: ${{ runner.os }}-gotest-${{ matrix.go-version }}-${{ hashFiles('**/http/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          ${{ runner.os }}-gotest-${{ matrix.go-version }}-
 
     - name: Run Build
-      run: cd ${{ github.workspace }}/http && go build -v ./...
+      run: go build -v ./...
 
     - name: Run Tests
-      run: cd ${{ github.workspace }}/http && go test -v ./...
+      run: go test -v ./...

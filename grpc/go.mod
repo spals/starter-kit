@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/golang/mock v1.5.0 // indirect
 	github.com/golang/protobuf v1.4.3
 	github.com/google/wire v0.5.0
 	github.com/jhump/protoreflect v1.8.1

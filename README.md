@@ -1,9 +1,13 @@
 [![][License img]][License]
+[![][Golang Lint img]][Golang Lint]
 [![][HTTP Tests img]][HTTP Tests]
 [![][Grpc Tests img]][Grpc Tests]
 
 [License]:LICENSE
 [License img]:https://img.shields.io/badge/License-BSD3-blue.svg
+
+[Golang Lint]:https://github.com/spals/starter-kit/actions/workflows/golangci-lint.yml?query=branch%3Amain
+[Golang Lint img]:https://github.com/spals/starter-kit/actions/workflows/golangci-lint.yml/badge.svg
 
 [HTTP Tests]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml?query=branch%3Amain
 [HTTP Tests img]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml/badge.svg

@@ -1,54 +1,54 @@
-name: Golang Lint CI
+# name: Golang Lint CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
 
-jobs:
+# jobs:
   
-  golangci-lint:
-    strategy:
-        matrix:
-          go-version: [1.15.x]
-#          go-version: [1.15.x, 1.16.x]
-          os: [macos-latest]
-#          NOTE: If enabling Linux or Windows builds, also enable Linux/Windows build cache below
-#          os: [ubuntu-latest, macos-latest, windows-latest]
+#   golangci-lint:
+#     strategy:
+#         matrix:
+#           go-version: [1.15.x]
+# #          go-version: [1.15.x, 1.16.x]
+#           os: [macos-latest]
+# #          NOTE: If enabling Linux or Windows builds, also enable Linux/Windows build cache below
+# #          os: [ubuntu-latest, macos-latest, windows-latest]
 
-    runs-on: ${{ matrix.os }}
+#     runs-on: ${{ matrix.os }}
 
-    env: 
-      GO111MODULE: on
+#     env: 
+#       GO111MODULE: on
 
-    steps:
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-version }}
+#     steps:
+#     - name: Setup Go
+#       uses: actions/setup-go@v2
+#       with:
+#         go-version: ${{ matrix.go-version }}
 
-    - name: Checkout Code
-      uses: actions/checkout@v2
+#     - name: Checkout Code
+#       uses: actions/checkout@v2
 
-    - name: Lint Http
-      uses: golangci/golangci-lint-action@v2
-      with:
-        skip-build-cache: false
-        skip-go-installation: true
-        skip-pkg-cache: false
-        version: latest
-        working-directory: http
+#     - name: Lint Http
+#       uses: golangci/golangci-lint-action@v2
+#       with:
+#         skip-build-cache: false
+#         skip-go-installation: true
+#         skip-pkg-cache: false
+#         version: latest
+#         working-directory: http
 
-    - name: Lint Grpc
-      uses: golangci/golangci-lint-action@v2
-      with:
-        # key: golangci-lint.cache-{working-directory}-{platform-arch}-{interval_number}-{go.mod_hash}
-        # restore-keys: |
-        #   golangci-lint.cache-{working-directory}-{interval_number}-
-        #   golangci-lint.cache-{working-directory}-
-        skip-build-cache: false
-        skip-go-installation: true
-        skip-pkg-cache: false
-        version: latest
-        working-directory: grpc/
+#     - name: Lint Grpc
+#       uses: golangci/golangci-lint-action@v2
+#       with:
+#         # key: golangci-lint.cache-{working-directory}-{platform-arch}-{interval_number}-{go.mod_hash}
+#         # restore-keys: |
+#         #   golangci-lint.cache-{working-directory}-{interval_number}-
+#         #   golangci-lint.cache-{working-directory}-
+#         skip-build-cache: true
+#         skip-go-installation: true
+#         skip-pkg-cache: true
+#         version: latest
+#         working-directory: grpc/

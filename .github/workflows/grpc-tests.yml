@@ -15,9 +15,9 @@ jobs:
     strategy:
         matrix:
           go-version: [1.15.x, 1.16.x]
-          os: [ubuntu-latest, macos-latest]
+          os: [macos-latest, ubuntu-latest]
 #          NOTE: If enabling Windows builds, also enable Windows build cache below
-#          os: [ubuntu-latest, macos-latest, windows-latest]
+#          os: [macos-latest, ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -38,13 +38,13 @@ jobs:
       with:
         # In order:
         # * Module download cache
-        # * Build cache (Linux)
         # * Build cache (Mac)
+        # * Build cache (Linux)
         # * Build cache (Windows)
         path: |
           ~/go/pkg/mod
-          ~/.cache/go-build
           ~/Library/Caches/go-build
+          ~/.cache/go-build
 #          %LocalAppData%\go-build
         key: ${{ runner.os }}-gotest-${{ matrix.go-version }}-${{ hashFiles('**/grpc/go.sum') }}
         restore-keys: |

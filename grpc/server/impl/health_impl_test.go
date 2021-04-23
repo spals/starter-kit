@@ -55,7 +55,7 @@ func (_m *mockHealth_WatchServer) startWatch(serviceName string, registry *impl.
 	time.Sleep(10 * time.Millisecond) // Wait for the watch to get started
 }
 
-func TestBasicCheckServing(t *testing.T) {
+func TestCheckBasicServing(t *testing.T) {
 	assert := assert.New(t)
 
 	registry := impl.NewHealthRegistry()
@@ -67,7 +67,7 @@ func TestBasicCheckServing(t *testing.T) {
 	}
 }
 
-func TestBasicCheckNotServing(t *testing.T) {
+func TestCheckBasicNotServing(t *testing.T) {
 	assert := assert.New(t)
 
 	registry := impl.NewHealthRegistry()
@@ -79,40 +79,114 @@ func TestBasicCheckNotServing(t *testing.T) {
 	}
 }
 
-func TestBasicWatchServing(t *testing.T) {
+func TestWatchBasicServing(t *testing.T) {
 	registry := impl.NewHealthRegistry()
+	registry.MarkAsServing(t)
+
 	watchServer, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	watchServer.startWatch("testing.T", registry, &wg)
-
-	registry.MarkAsServing(t)
-	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
-	cancel()
+	cancel() // Signal to watchServer to stop
 
 	wg.Wait()
 	watchServer.assertUpdates(
-		healthproto.HealthCheckResponse_SERVICE_UNKNOWN, // Initial watch value
 		healthproto.HealthCheckResponse_SERVING,
 	)
 }
 
-func TestBasicWatchNotServing(t *testing.T) {
+func TestWatchBasicNotServing(t *testing.T) {
 	registry := impl.NewHealthRegistry()
+	registry.MarkAsNotServing(t)
+
 	watchServer, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	watchServer.startWatch("testing.T", registry, &wg)
-
-	registry.MarkAsNotServing(t)
-	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
-	cancel()
+	cancel() // Signal to watchServer to stop
 
 	wg.Wait()
 	watchServer.assertUpdates(
-		healthproto.HealthCheckResponse_SERVICE_UNKNOWN, // Initial watch value
 		healthproto.HealthCheckResponse_NOT_SERVING,
+	)
+}
+
+func TestWatchIgnoreDupStatus(t *testing.T) {
+	registry := impl.NewHealthRegistry()
+	registry.MarkAsNotServing(t)
+
+	watchServer, cancel := newMockHealth_WatchServer(t)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	watchServer.startWatch("testing.T", registry, &wg)
+	registry.MarkAsServing(t) // Update with same serving status twice
+	registry.MarkAsServing(t)
+	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
+	cancel()                          // Signal to watchServer to stop
+
+	wg.Wait()
+	watchServer.assertUpdates(
+		healthproto.HealthCheckResponse_NOT_SERVING,
+		healthproto.HealthCheckResponse_SERVING, // NOTE: Only one SERVING status received -- dups are ignored
+	)
+}
+
+func TestWatchIgnorePreWatchStatusChanges(t *testing.T) {
+	registry := impl.NewHealthRegistry()
+	registry.MarkAsNotServing(t)
+	registry.MarkAsServing(t) // Update serving status prior to watch
+
+	watchServer, cancel := newMockHealth_WatchServer(t)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	watchServer.startWatch("testing.T", registry, &wg)
+	cancel() // Signal to watchServer to stop
+
+	wg.Wait()
+	watchServer.assertUpdates(
+		healthproto.HealthCheckResponse_SERVING, // NOTE: Only one status received -- status changes prior to watch are ignored
+	)
+}
+
+func TestWatchMultiStatus(t *testing.T) {
+	registry := impl.NewHealthRegistry()
+	registry.MarkAsServing(t)
+
+	watchServer, cancel := newMockHealth_WatchServer(t)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	watchServer.startWatch("testing.T", registry, &wg)
+	registry.MarkAsNotServing(t)      // Update serving status after watch start
+	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
+	cancel()                          // Signal to watchServer to stop
+
+	wg.Wait()
+	watchServer.assertUpdates(
+		healthproto.HealthCheckResponse_SERVING,
+		healthproto.HealthCheckResponse_NOT_SERVING,
+	)
+}
+
+func TestWatchUnknownService(t *testing.T) {
+	registry := impl.NewHealthRegistry()
+
+	watchServer, cancel := newMockHealth_WatchServer(t)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	watchServer.startWatch("testing.T", registry, &wg)
+	registry.MarkAsServing(t)         // Register service after watch start
+	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
+	cancel()                          // Signal to watchServer to stop
+
+	wg.Wait()
+	watchServer.assertUpdates(
+		healthproto.HealthCheckResponse_SERVICE_UNKNOWN, // Initial state on watch start
+		healthproto.HealthCheckResponse_SERVING,
 	)
 }

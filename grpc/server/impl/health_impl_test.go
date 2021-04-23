@@ -172,6 +172,26 @@ func TestWatchMultiStatus(t *testing.T) {
 	)
 }
 
+func TestWatchMultiWatch(t *testing.T) {
+	registry := impl.NewHealthRegistry()
+	registry.MarkAsServing(t)
+	registry.MarkAsServing("")
+
+	watchServer, cancel := newMockHealth_WatchServer(t)
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	watchServer.startWatch("testing.T", registry, &wg)
+	watchServer.startWatch("string", registry, &wg)
+	cancel() // Signal to watchServer to stop
+
+	wg.Wait()
+	watchServer.assertUpdates(
+		healthproto.HealthCheckResponse_SERVING,
+		healthproto.HealthCheckResponse_SERVING,
+	)
+}
+
 func TestWatchUnknownService(t *testing.T) {
 	registry := impl.NewHealthRegistry()
 

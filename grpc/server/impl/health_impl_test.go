@@ -2,66 +2,59 @@ package impl_test
 
 import (
 	"context"
+	"log"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/spals/starter-kit/grpc/server/impl"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 	healthproto "google.golang.org/grpc/health/grpc_health_v1"
 )
 
-// const (
-// 	grpcPort = 54321
-// )
+// Alias for Protobuf auto-generated Enum type
+type ServingStatus = healthproto.HealthCheckResponse_ServingStatus
 
-// ========== Suite Definition ==========
+type mockHealth_WatchServer struct {
+	grpc.ServerStream
 
-// type HealthRegistryTestSuite struct {
-// 	// Extends the testify suite package
-// 	// See https://github.com/stretchr/testify#suite-package
-// 	suite.Suite
-// 	// A reference to the GrpcServer created for testing
-// 	grpcServer     *grpc.Server
-// 	healthRegistry *impl.HealthRegistry
-// }
+	ctx           context.Context
+	healthUpdates []ServingStatus
+	t             *testing.T
+}
 
-// Fake service definitions used for testing
-// type TestService struct{}
+func newMockHealth_WatchServer(t *testing.T) (mockHealth_WatchServer, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(context.Background())
+	watchServer := mockHealth_WatchServer{ctx: ctx, t: t}
+	return watchServer, cancel
+}
 
-// ========== Setup and Teardown ==========
+func (_m *mockHealth_WatchServer) assertUpdates(expectedUpdates ...ServingStatus) {
+	assert := assert.New(_m.t)
+	assert.Equal(expectedUpdates, _m.healthUpdates)
+}
 
-// func (s *HealthRegistryTestSuite) SetupSuite() {
-// 	assert := assert.New(s.T())
-// 	grpcServer := grpc.NewServer()
-// 	healthRegistry := impl.NewHealthRegistry()
-// 	healthproto.RegisterHealthServer(grpcServer, healthRegistry)
+func (_m *mockHealth_WatchServer) Context() context.Context {
+	return _m.ctx
+}
 
-// 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
-// 	assert.NoErrorf(err, "Failed to create listener on port %d", grpcPort)
+func (_m *mockHealth_WatchServer) Send(resp *healthproto.HealthCheckResponse) error {
+	log.Printf("WatchServer received status : %s", resp.GetStatus())
+	_m.healthUpdates = append(_m.healthUpdates, resp.GetStatus())
+	return nil
+}
 
-// 	go func() {
-// 		grpcServer.Serve(listener)
-// 	}()
+func (_m *mockHealth_WatchServer) startWatch(serviceName string, registry *impl.HealthRegistry, wg *sync.WaitGroup) {
+	// Setup a watch in a separate goroutine
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		registry.Watch(&healthproto.HealthCheckRequest{Service: serviceName}, _m) // nolint:errcheck
+	}(wg)
 
-// 	s.grpcServer = grpcServer
-// 	s.healthRegistry = healthRegistry
-// }
+	time.Sleep(10 * time.Millisecond) // Wait for the watch to get started
+}
 
-// func (s *HealthRegistryTestSuite) TearDownSuite() {
-// 	s.healthRegistry.Shutdown()
-// 	s.grpcServer.Stop()
-// }
-
-// ========== Test Trigger ==========
-// func TestHealthRegistryTestSuite(t *testing.T) {
-// 	suite.Run(t, new(HealthRegistryTestSuite))
-// }
-
-// ========== Tests ==========
-// func (s *HealthRegistryTestSuite) TestBasicCheckServing() {
-// 	assert := assert.New(s.T())
-//
-//  registry := impl.NewHealthRegistry()
-//  registry.MarkAsServing(s.T())
 func TestBasicCheckServing(t *testing.T) {
 	assert := assert.New(t)
 
@@ -73,12 +66,6 @@ func TestBasicCheckServing(t *testing.T) {
 		assert.Equal(healthproto.HealthCheckResponse_SERVING, resp.GetStatus())
 	}
 }
-
-// func (s *HealthRegistryTestSuite) TestBasicCheckNotServing() {
-// 	assert := assert.New(s.T())
-
-// 	registry := impl.NewHealthRegistry()
-// 	registry.MarkAsNotServing(s.T())
 
 func TestBasicCheckNotServing(t *testing.T) {
 	assert := assert.New(t)
@@ -92,53 +79,40 @@ func TestBasicCheckNotServing(t *testing.T) {
 	}
 }
 
-// func (s *HealthRegistryTestSuite) TestWatch() {
-// 	assert := assert.New(s.T())
+func TestBasicWatchServing(t *testing.T) {
+	registry := impl.NewHealthRegistry()
+	watchServer, cancel := newMockHealth_WatchServer(t)
+	var wg sync.WaitGroup
+	wg.Add(1)
 
-// 	testService := TestService{}
+	watchServer.startWatch("testing.T", registry, &wg)
 
-// 	conn := s.createGrpcConn()
-// 	client := healthproto.NewHealthClient(conn)
-// 	req := &healthproto.HealthCheckRequest{Service: "impl_test.TestService"}
-// 	stream, err := client.Watch(context.Background(), req)
-// 	assert.NoError(err)
+	registry.MarkAsServing(t)
+	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
+	cancel()
 
-// 	done := make(chan bool)
+	wg.Wait()
+	watchServer.assertUpdates(
+		healthproto.HealthCheckResponse_SERVICE_UNKNOWN, // Initial watch value
+		healthproto.HealthCheckResponse_SERVING,
+	)
+}
 
-// 	go func() {
-// 		for {
-// 			log.Printf("Receiving on stream")
-// 			resp, err := stream.Recv()
-// 			if err == io.EOF {
-// 				done <- true //means stream is finished
-// 				return
-// 			}
-// 			if err != nil {
-// 				log.Fatalf("cannot receive %v", err)
-// 			}
-// 			log.Printf("Resp received: %s", resp.GetStatus())
-// 		}
-// 	}()
-// 	log.Printf("Calling markAsServing")
-// 	s.healthRegistry.MarkAsServing(testService)
-// 	log.Printf("Calling markAsServing")
-// 	s.healthRegistry.MarkAsServing(testService)
-// 	log.Printf("Calling markAsNotServing")
-// 	s.healthRegistry.MarkAsNotServing(testService)
-// 	log.Printf("Calling markAsNotServing")
-// 	s.healthRegistry.MarkAsNotServing(testService)
-// 	conn.Close()
+func TestBasicWatchNotServing(t *testing.T) {
+	registry := impl.NewHealthRegistry()
+	watchServer, cancel := newMockHealth_WatchServer(t)
+	var wg sync.WaitGroup
+	wg.Add(1)
 
-// 	<-done
-// 	log.Printf("Finished")
-// }
+	watchServer.startWatch("testing.T", registry, &wg)
 
-// ========== Private Helpers ==========
+	registry.MarkAsNotServing(t)
+	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
+	cancel()
 
-// func (s *HealthRegistryTestSuite) createGrpcConn() *grpc.ClientConn {
-// 	assert := assert.New(s.T())
-// 	conn, err := grpc.Dial(fmt.Sprintf(":%d", grpcPort), grpc.WithInsecure())
-// 	assert.NoErrorf(err, "Could not connect to Grpc server on port %d", grpcPort)
-
-// 	return conn
-// }
+	wg.Wait()
+	watchServer.assertUpdates(
+		healthproto.HealthCheckResponse_SERVICE_UNKNOWN, // Initial watch value
+		healthproto.HealthCheckResponse_NOT_SERVING,
+	)
+}

@@ -28,9 +28,9 @@ func NewGrpcServer(
 	configServer *impl.ConfigServer,
 ) *GrpcServer {
 	delegate := grpc.NewServer()
-	healthproto.RegisterHealthServer(delegate, healthRegistry)
 
 	// Register any service implementations
+	healthproto.RegisterHealthServer(delegate, healthRegistry)
 	proto.RegisterConfigServer(delegate, configServer)
 
 	grpcServer := &GrpcServer{config, healthRegistry, delegate}
@@ -75,6 +75,8 @@ func (s *GrpcServer) Shutdown() {
 	s.delegate.GracefulStop()
 	log.Print("GrpcServer shutdown")
 }
+
+// ========== Private Helpers ==========
 
 func (s *GrpcServer) makeListener() net.Listener {
 	// If a random port is requested, then find an open port

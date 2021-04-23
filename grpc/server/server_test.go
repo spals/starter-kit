@@ -13,6 +13,7 @@ import (
 	"github.com/spals/starter-kit/grpc/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 	healthproto "google.golang.org/grpc/health/grpc_health_v1"
 )
 
@@ -33,8 +34,8 @@ type GrpcServerTestSuite struct {
 	suite.Suite
 	// A reference to the GrpcServer created for testing
 	grpcServer *server.GrpcServer
-	// A reference to the GrpcClient created for testing
-	grpcClient *client.GrpcClient
+	// A reference to the Grpc connection created for testing
+	grpcConn *grpc.ClientConn
 }
 
 // ========== Setup and Teardown ==========
@@ -58,20 +59,20 @@ func (s *GrpcServerTestSuite) SetupTest() {
 		if s.grpcServer.ActivePort() == 0 {
 			log.Print("No active port available for Grpc testing")
 			return false
-		} else if s.grpcClient == nil {
+		} else if s.grpcConn == nil {
 			grpcTarget := fmt.Sprintf("localhost:%d", s.grpcServer.ActivePort())
-			s.grpcClient = client.NewGrpcClient(grpcTarget)
+			s.grpcConn = client.NewGrpcClientConnForTest(grpcTarget)
 			log.Printf("Using target %s for Grpc testing", grpcTarget)
 		}
 
-		healthClient := healthproto.NewHealthClient(s.grpcClient.Conn())
+		healthClient := healthproto.NewHealthClient(s.grpcConn)
 		resp, err := healthClient.Check(context.Background(), &healthproto.HealthCheckRequest{})
 		return err == nil && resp.GetStatus() == healthproto.HealthCheckResponse_SERVING
 	}, serverStartTimeoutMs*time.Millisecond /*waitFor*/, serverStartTickMs*time.Millisecond /*tick*/)
 }
 
 func (s *GrpcServerTestSuite) TearDownSuite() {
-	s.grpcClient.Close()
+	s.grpcConn.Close()
 	s.grpcServer.Shutdown()
 }
 
@@ -84,17 +85,17 @@ func TestGrpcServerTestSuite(t *testing.T) {
 func (s *GrpcServerTestSuite) TestGetConfig() {
 	assert := assert.New(s.T())
 
-	configClient := proto.NewConfigClient(s.grpcClient.Conn())
+	configClient := proto.NewConfigClient(s.grpcConn)
 	resp, err := configClient.GetConfig(context.Background(), &proto.ConfigRequest{})
 	if assert.NoError(err) {
 		assert.Equal(s.grpcServer.ActivePort(), int(resp.GetConfig().Port))
 	}
 }
 
-func (s *GrpcServerTestSuite) TestConfigServiceHealthCheck() {
+func (s *GrpcServerTestSuite) TestHealthCheck() {
 	assert := assert.New(s.T())
 
-	healthClient := healthproto.NewHealthClient(s.grpcClient.Conn())
+	healthClient := healthproto.NewHealthClient(s.grpcConn)
 	resp, err := healthClient.Check(context.Background(), &healthproto.HealthCheckRequest{Service: "impl.ConfigServer"})
 
 	if assert.NoError(err) {

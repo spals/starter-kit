@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"testing"
 	"time"
 
@@ -101,4 +102,38 @@ func (s *GrpcServerTestSuite) TestHealthCheck() {
 	if assert.NoError(err) {
 		assert.Equal(healthproto.HealthCheckResponse_SERVING, resp.GetStatus())
 	}
+}
+
+func (s *GrpcServerTestSuite) TestHealthWatch() {
+	assert := assert.New(s.T())
+
+	healthClient := healthproto.NewHealthClient(s.grpcConn)
+	ctx, cancel := context.WithCancel(context.Background())
+	healthWatchClient, err := healthClient.Watch(ctx, &healthproto.HealthCheckRequest{Service: "impl.ConfigServer"})
+	assert.NoError(err)
+
+	var healthUpdates []healthproto.HealthCheckResponse_ServingStatus
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(healthUpdates *[]healthproto.HealthCheckResponse_ServingStatus, wg *sync.WaitGroup) {
+		defer wg.Done()
+		for {
+			resp, err := healthWatchClient.Recv()
+			if err != nil { // Error is expected when the context is cancelled
+				break
+			}
+			*healthUpdates = append(*healthUpdates, resp.GetStatus()) // nolint: staticcheck
+		}
+	}(&healthUpdates, &wg)
+
+	time.Sleep(10 * time.Millisecond) // Wait for the watch to get started
+	cancel()                          // Signal to watchServer to stop
+
+	wg.Wait()
+	assert.Equal(
+		[]healthproto.HealthCheckResponse_ServingStatus{
+			healthproto.HealthCheckResponse_SERVING,
+		},
+		healthUpdates,
+	)
 }

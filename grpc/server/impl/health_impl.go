@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	"google.golang.org/grpc/health"
 	healthproto "google.golang.org/grpc/health/grpc_health_v1"
-)
-
-const (
-	ROOT_SERVICE = ""
 )
 
 // HealthRegistry ...
@@ -20,7 +17,9 @@ const (
 type HealthRegistry struct {
 	healthproto.UnimplementedHealthServer
 
-	delegate *health.Server
+	delegate          *health.Server
+	mu                sync.RWMutex
+	serviceServingMap sync.Map
 }
 
 // ========== Constructor ==========
@@ -52,20 +51,19 @@ func (r *HealthRegistry) Watch(req *healthproto.HealthCheckRequest, stream healt
 // MarkAsNotServing ...
 func (r *HealthRegistry) MarkAsNotServing(service interface{}) {
 	serviceName := serviceName(service)
-	log.Printf("Marking service '%s' as NOT SERVING", serviceName)
-	r.delegate.SetServingStatus(serviceName, healthproto.HealthCheckResponse_NOT_SERVING)
+	r.markServingStatus(serviceName, healthproto.HealthCheckResponse_NOT_SERVING)
 }
 
 // MarkAsServing ...
 func (r *HealthRegistry) MarkAsServing(service interface{}) {
 	serviceName := serviceName(service)
-	log.Printf("Marking service '%s' as SERVING", serviceName)
-	r.delegate.SetServingStatus(serviceName, healthproto.HealthCheckResponse_SERVING)
+	r.markServingStatus(serviceName, healthproto.HealthCheckResponse_SERVING)
 }
 
 // Resume ...
 // See health.Server.Resume
 func (r *HealthRegistry) Resume() {
+	// TODO: Restart rootServiceWatcher
 	r.delegate.Resume()
 }
 
@@ -75,7 +73,32 @@ func (r *HealthRegistry) Shutdown() {
 	r.delegate.Shutdown()
 }
 
-// ========== Public Helpers ==========
+// ========== Private Helpers ==========
+
+func (r *HealthRegistry) markServingStatus(serviceName string, status healthproto.HealthCheckResponse_ServingStatus) {
+	serving := (status == healthproto.HealthCheckResponse_SERVING)
+	r.serviceServingMap.Store(serviceName, serving)
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	log.Printf("Marking service '%s' as %s", serviceName, status)
+	r.delegate.SetServingStatus(serviceName, status)
+	r.delegate.SetServingStatus("", r.rootHealthStatus())
+}
+
+func (r *HealthRegistry) rootHealthStatus() healthproto.HealthCheckResponse_ServingStatus {
+	rootServing := true
+	r.serviceServingMap.Range(func(serviceName, serviceServing interface{}) bool {
+		rootServing = rootServing && (serviceServing == true)
+		return true
+	})
+
+	if rootServing {
+		return healthproto.HealthCheckResponse_SERVING
+	}
+
+	return healthproto.HealthCheckResponse_NOT_SERVING
+}
 
 func serviceName(service interface{}) string {
 	return strings.ReplaceAll(fmt.Sprintf("%T", service), "*", "")

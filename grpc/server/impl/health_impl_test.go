@@ -40,7 +40,7 @@ func (_m *mockHealth_WatchServer) Context() context.Context {
 }
 
 func (_m *mockHealth_WatchServer) Send(resp *healthproto.HealthCheckResponse) error {
-	log.Printf("WatchServer received status : %s", resp.GetStatus())
+	log.Printf("MockHealthWatcher received status : %s", resp.GetStatus())
 	_m.healthUpdates = append(_m.healthUpdates, resp.GetStatus())
 	return nil
 }
@@ -59,6 +59,7 @@ func TestCheckBasicServing(t *testing.T) {
 	assert := assert.New(t)
 
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 	registry.MarkAsServing(t)
 
 	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{Service: "testing.T"})
@@ -71,6 +72,7 @@ func TestCheckBasicNotServing(t *testing.T) {
 	assert := assert.New(t)
 
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 	registry.MarkAsNotServing(t)
 
 	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{Service: "testing.T"})
@@ -79,56 +81,155 @@ func TestCheckBasicNotServing(t *testing.T) {
 	}
 }
 
-func TestWatchBasicServing(t *testing.T) {
+func TestRootHealthBasicServing(t *testing.T) {
+	assert := assert.New(t)
+
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 	registry.MarkAsServing(t)
 
-	watchServer, cancel := newMockHealth_WatchServer(t)
+	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{})
+	if assert.NoError(err) {
+		assert.Equal(healthproto.HealthCheckResponse_SERVING, resp.GetStatus())
+	}
+}
+
+func TestRootHealthBasicNotServing(t *testing.T) {
+	assert := assert.New(t)
+
+	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
+	registry.MarkAsNotServing(t)
+
+	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{})
+	if assert.NoError(err) {
+		assert.Equal(healthproto.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
+	}
+}
+
+func TestRootHealthMultiServing(t *testing.T) {
+	assert := assert.New(t)
+
+	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
+	registry.MarkAsServing(t)
+	registry.MarkAsServing("")
+
+	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{})
+	if assert.NoError(err) {
+		assert.Equal(healthproto.HealthCheckResponse_SERVING, resp.GetStatus())
+	}
+}
+
+func TestRootHealthMultiNotServing(t *testing.T) {
+	assert := assert.New(t)
+
+	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
+	registry.MarkAsNotServing(t) // Any not serving service means the root service is not serving
+	registry.MarkAsServing("")
+
+	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{})
+	if assert.NoError(err) {
+		assert.Equal(healthproto.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
+	}
+}
+
+func TestRootHealthMultiNotServing2(t *testing.T) {
+	assert := assert.New(t)
+
+	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
+	registry.MarkAsServing(t)
+	registry.MarkAsNotServing("") // Any not serving service means the root service is not serving
+
+	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{})
+	if assert.NoError(err) {
+		assert.Equal(healthproto.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
+	}
+}
+
+func TestRootHealthTransitionToServing(t *testing.T) {
+	assert := assert.New(t)
+
+	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
+	registry.MarkAsNotServing(t)
+	registry.MarkAsServing(t)
+
+	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{})
+	if assert.NoError(err) {
+		assert.Equal(healthproto.HealthCheckResponse_SERVING, resp.GetStatus())
+	}
+}
+
+func TestRootHealthTransitionToNotServing(t *testing.T) {
+	assert := assert.New(t)
+
+	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
+	registry.MarkAsServing(t)
+	registry.MarkAsNotServing(t)
+
+	resp, err := registry.Check(context.Background(), &healthproto.HealthCheckRequest{})
+	if assert.NoError(err) {
+		assert.Equal(healthproto.HealthCheckResponse_NOT_SERVING, resp.GetStatus())
+	}
+}
+
+func TestWatchBasicServing(t *testing.T) {
+	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
+	registry.MarkAsServing(t)
+
+	mockHealthWatcher, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	watchServer.startWatch("testing.T", registry, &wg)
+	mockHealthWatcher.startWatch("testing.T", registry, &wg)
 	cancel() // Signal to watchServer to stop
 
 	wg.Wait()
-	watchServer.assertUpdates(
+	mockHealthWatcher.assertUpdates(
 		healthproto.HealthCheckResponse_SERVING,
 	)
 }
 
 func TestWatchBasicNotServing(t *testing.T) {
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 	registry.MarkAsNotServing(t)
 
-	watchServer, cancel := newMockHealth_WatchServer(t)
+	mockHealthWatcher, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	watchServer.startWatch("testing.T", registry, &wg)
+	mockHealthWatcher.startWatch("testing.T", registry, &wg)
 	cancel() // Signal to watchServer to stop
 
 	wg.Wait()
-	watchServer.assertUpdates(
+	mockHealthWatcher.assertUpdates(
 		healthproto.HealthCheckResponse_NOT_SERVING,
 	)
 }
 
 func TestWatchIgnoreDupStatus(t *testing.T) {
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 	registry.MarkAsNotServing(t)
 
-	watchServer, cancel := newMockHealth_WatchServer(t)
+	mockHealthWatcher, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	watchServer.startWatch("testing.T", registry, &wg)
+	mockHealthWatcher.startWatch("testing.T", registry, &wg)
 	registry.MarkAsServing(t) // Update with same serving status twice
 	registry.MarkAsServing(t)
 	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
 	cancel()                          // Signal to watchServer to stop
 
 	wg.Wait()
-	watchServer.assertUpdates(
+	mockHealthWatcher.assertUpdates(
 		healthproto.HealthCheckResponse_NOT_SERVING,
 		healthproto.HealthCheckResponse_SERVING, // NOTE: Only one SERVING status received -- dups are ignored
 	)
@@ -136,37 +237,39 @@ func TestWatchIgnoreDupStatus(t *testing.T) {
 
 func TestWatchIgnorePreWatchStatusChanges(t *testing.T) {
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 	registry.MarkAsNotServing(t)
 	registry.MarkAsServing(t) // Update serving status prior to watch
 
-	watchServer, cancel := newMockHealth_WatchServer(t)
+	mockHealthWatcher, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	watchServer.startWatch("testing.T", registry, &wg)
+	mockHealthWatcher.startWatch("testing.T", registry, &wg)
 	cancel() // Signal to watchServer to stop
 
 	wg.Wait()
-	watchServer.assertUpdates(
+	mockHealthWatcher.assertUpdates(
 		healthproto.HealthCheckResponse_SERVING, // NOTE: Only one status received -- status changes prior to watch are ignored
 	)
 }
 
 func TestWatchMultiStatus(t *testing.T) {
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 	registry.MarkAsServing(t)
 
-	watchServer, cancel := newMockHealth_WatchServer(t)
+	mockHealthWatcher, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	watchServer.startWatch("testing.T", registry, &wg)
+	mockHealthWatcher.startWatch("testing.T", registry, &wg)
 	registry.MarkAsNotServing(t)      // Update serving status after watch start
 	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
 	cancel()                          // Signal to watchServer to stop
 
 	wg.Wait()
-	watchServer.assertUpdates(
+	mockHealthWatcher.assertUpdates(
 		healthproto.HealthCheckResponse_SERVING,
 		healthproto.HealthCheckResponse_NOT_SERVING,
 	)
@@ -174,19 +277,20 @@ func TestWatchMultiStatus(t *testing.T) {
 
 func TestWatchMultiWatch(t *testing.T) {
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 	registry.MarkAsServing(t)
 	registry.MarkAsServing("")
 
-	watchServer, cancel := newMockHealth_WatchServer(t)
+	mockHealthWatcher, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	watchServer.startWatch("testing.T", registry, &wg)
-	watchServer.startWatch("string", registry, &wg)
+	mockHealthWatcher.startWatch("testing.T", registry, &wg)
+	mockHealthWatcher.startWatch("string", registry, &wg)
 	cancel() // Signal to watchServer to stop
 
 	wg.Wait()
-	watchServer.assertUpdates(
+	mockHealthWatcher.assertUpdates(
 		healthproto.HealthCheckResponse_SERVING,
 		healthproto.HealthCheckResponse_SERVING,
 	)
@@ -194,18 +298,19 @@ func TestWatchMultiWatch(t *testing.T) {
 
 func TestWatchUnknownService(t *testing.T) {
 	registry := impl.NewHealthRegistry()
+	defer registry.Shutdown()
 
-	watchServer, cancel := newMockHealth_WatchServer(t)
+	mockHealthWatcher, cancel := newMockHealth_WatchServer(t)
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	watchServer.startWatch("testing.T", registry, &wg)
+	mockHealthWatcher.startWatch("testing.T", registry, &wg)
 	registry.MarkAsServing(t)         // Register service after watch start
 	time.Sleep(10 * time.Millisecond) // Wait for the watch to fully process
 	cancel()                          // Signal to watchServer to stop
 
 	wg.Wait()
-	watchServer.assertUpdates(
+	mockHealthWatcher.assertUpdates(
 		healthproto.HealthCheckResponse_SERVICE_UNKNOWN, // Initial state on watch start
 		healthproto.HealthCheckResponse_SERVING,
 	)

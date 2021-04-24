@@ -63,7 +63,6 @@ func (r *HealthRegistry) MarkAsServing(service interface{}) {
 // Resume ...
 // See health.Server.Resume
 func (r *HealthRegistry) Resume() {
-	// TODO: Restart rootServiceWatcher
 	r.delegate.Resume()
 }
 

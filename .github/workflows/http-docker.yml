@@ -26,10 +26,10 @@ jobs:
       id: docker-meta
       uses: crazy-max/ghaction-docker-meta@v2
       with:
-        images: spals/starterkit-http
+        images: spals/starter-kit-http
         labels: |
-          org.opencontainers.image.title=StarterKit HTTP Server
-          org.opencontainers.image.description=A basic Golang HTTP server
+          org.opencontainers.image.title=starter-kit-http
+          org.opencontainers.image.description=Starting boilerplate for Golang HTTP servers
           org.opencontainers.image.vendor=Spals
         tags: |
           type=edge,branch=main

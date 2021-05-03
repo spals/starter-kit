@@ -12,8 +12,8 @@ RUN go build -o /go/bin -v ./...
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 
-COPY --from=builder /go/bin/http /starterkit-http
+COPY --from=builder /go/bin/http /starter-kit-http
 
-ENTRYPOINT /starterkit-http
+ENTRYPOINT /starter-kit-http
 ENV HTTP_SERVER_PORT 8080
 EXPOSE 8080

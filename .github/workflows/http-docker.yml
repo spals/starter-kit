@@ -1,0 +1,76 @@
+name: HTTP Docker CD
+
+on:
+  workflow_run:
+    workflows: [ "HTTP Tests CI" ]
+    branches: [ main ]
+    types: [ completed ]
+
+defaults:
+  run:
+    working-directory: ./http
+
+jobs:
+  publish-docker-http:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - name: Setup QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Setup Docker Labels and Tags
+      id: docker-meta
+      uses: crazy-max/ghaction-docker-meta@v2
+      with:
+        images: spals/starterkit-http
+        labels: |
+          org.opencontainers.image.title=StarterKit HTTP Server
+          org.opencontainers.image.description=A basic Golang HTTP server
+          org.opencontainers.image.vendor=Spals
+        tags: |
+          type=edge,branch=main
+          type=ref,event=branch
+          type=ref,event=pr
+          type=schedule
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v1 
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Setup Docker Cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: Publish Docker Image
+      uses: docker/build-push-action@v2
+      with:
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new
+        context: .
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.docker-meta.outputs.tags }}
+        labels: ${{ steps.docker-meta.outputs.labels }}
+
+    # Temp fix
+    # https://github.com/docker/build-push-action/issues/252
+    # https://github.com/moby/buildkit/issues/1896
+    - name: Move Docker Cache
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache

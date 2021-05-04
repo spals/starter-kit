@@ -141,7 +141,7 @@ func addLoggingMiddleware(
 ) http.Handler {
 	return buildChain(
 		rootHandler,
-		hlog.NewHandler(log.Logger),
+		hlog.NewHandler(config.ReqLogger),
 		hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
 			hlog.FromRequest(r).Info().
 				Str("method", r.Method).
@@ -149,7 +149,7 @@ func addLoggingMiddleware(
 				Int("status", status).
 				Int("size", size).
 				Dur("duration", duration).
-				Msg("HTTPRequest")
+				Msg("Finished HTTP request")
 		}),
 		hlog.RemoteAddrHandler("ip"),
 		hlog.UserAgentHandler("user_agent"),

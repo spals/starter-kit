@@ -3,10 +3,13 @@ package config
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"fmt"
+	nativelog "log"
 	"os"
 	"time"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -15,7 +18,9 @@ import (
 //
 // See https://github.com/sethvargo/go-envconfig/blob/main/README.md
 type HTTPServerConfig struct {
+	IsDev           bool          `env:"DEV,default=false"`
 	Port            int           `env:"PORT,default=0"`
+	LogLevel        string        `env:"LOG_LEVEL,default=info"`
 	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT,default=1s"`
 
 	LivenessConfig  *LivenessConfig  `env:",prefix=LIVENESS_"`
@@ -24,17 +29,39 @@ type HTTPServerConfig struct {
 
 // NewHTTPServerConfig ...
 func NewHTTPServerConfig(l envconfig.Lookuper) *HTTPServerConfig {
-	log.Print("Parsing HTTPServerConfig")
 	ctx := context.Background()
 	var config HTTPServerConfig
 
 	if err := envconfig.ProcessWith(ctx, &config, l); err != nil {
-		log.Fatalf("HTTPServerConfig parse failure: %s", err)
+		nativelog.Fatalf("HTTPServerConfig parse failure: %s", err)
 		os.Exit(1)
 	}
 
-	log.Printf("HTTPServerConfig parsed as \n%s", config.ToJSONString(true /*prettyPrint*/))
+	log.Logger = makeLogger(&config)
+	log.Debug().Interface("config", config).Msg("HTTPServerConfig parsed")
 	return &config
+}
+
+func makeLogger(config *HTTPServerConfig) zerolog.Logger {
+	if config.IsDev {
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+
+		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+		output.FormatFieldName = func(i interface{}) string {
+			return fmt.Sprintf("%s:", i)
+		}
+
+		return zerolog.New(output).With().Timestamp().Logger()
+	} else {
+		logLevel, err := zerolog.ParseLevel(config.LogLevel)
+		if err != nil {
+			nativelog.Fatalf("Error while parsing log level: %s", err)
+		}
+		zerolog.SetGlobalLevel(logLevel)
+
+		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+		return zerolog.New(os.Stderr).With().Timestamp().Logger()
+	}
 }
 
 // ToJSONString ...

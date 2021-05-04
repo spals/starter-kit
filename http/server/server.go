@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/heptiolabs/healthcheck"
+	"github.com/rs/zerolog/log"
 	"github.com/spals/starter-kit/http/server/config"
 	"github.com/spals/starter-kit/http/server/handler"
 )
@@ -71,23 +71,21 @@ func (s *HTTPServer) Start() {
 		// If we do not have a custom listener, then use the default listener
 		if customListener == nil {
 			s.delegate.Addr = fmt.Sprint(":", s.config.Port)
-			log.Printf("HTTPServer listening on port %s", s.delegate.Addr)
+			log.Info().Msgf("HTTPServer listening on port %s", s.delegate.Addr)
 			if err := s.delegate.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				log.Fatalf("HTTPServer start failure with default listener: %s", err)
-				os.Exit(2)
+				log.Fatal().Err(err).Msg("HTTPServer start failure with default listener")
 			}
 		} else {
-			log.Printf("HTTPServer listening on port :%d", customListener.Addr().(*net.TCPAddr).Port)
+			log.Info().Msgf("HTTPServer listening on port :%d", customListener.Addr().(*net.TCPAddr).Port)
 			if err := s.delegate.Serve(customListener); err != nil && err != http.ErrServerClosed {
-				log.Fatalf("HTTPServer start failure with custom listener: %s", err)
-				os.Exit(2)
+				log.Fatal().Err(err).Msg("HTTPServer start failure with custom listener")
 			}
 		}
 	}()
-	log.Print("HTTPServer started")
+	log.Info().Msg("HTTPServer started")
 
 	<-httpServerStopped
-	log.Print("HTTPServer stopped")
+	log.Info().Msg("HTTPServer stopped")
 	s.Shutdown()
 }
 
@@ -98,11 +96,11 @@ func (s *HTTPServer) Shutdown() {
 		cancel()
 	}()
 
-	log.Print("Shutting down HTTPServer")
+	log.Info().Msg("Shutting down HTTPServer")
 	if err := s.delegate.Shutdown(ctx); err != nil {
-		log.Fatalf("HTTPServer shutdown failed: %+v", err)
+		log.Fatal().Err(err).Msg("HTTPServer shutdown failed")
 	}
-	log.Print("HTTPServer shutdown")
+	log.Info().Msg("HTTPServer shutdown")
 }
 
 // If a random port is requested, then make a custom listener on an open port
@@ -110,15 +108,14 @@ func (s *HTTPServer) Shutdown() {
 // See https://stackoverflow.com/questions/43424787/how-to-use-next-available-port-in-http-listenandserve
 func (s *HTTPServer) makeCustomListener() net.Listener {
 	if s.config.Port == 0 {
-		log.Print("Finding available random port")
+		log.Debug().Msg("Finding available random port")
 		listener, err := net.Listen("tcp", ":0")
 		if err != nil {
-			log.Fatalf("Error while finding random port: %s", err)
-			os.Exit(2)
+			log.Fatal().Err(err).Msg("Error while finding random port")
 		}
 
 		newPort := listener.Addr().(*net.TCPAddr).Port
-		log.Printf("Overwriting configured port (%d) with random port (%d)", s.config.Port, newPort)
+		log.Info().Msgf("Overwriting configured port (%d) with random port (%d)", s.config.Port, newPort)
 		s.config.Port = newPort
 		return listener
 	}

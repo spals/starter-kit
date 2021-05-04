@@ -2,7 +2,7 @@ package server_test
 
 import (
 	"fmt"
-	"log"
+	nativelog "log"
 	"net/http"
 	"testing"
 	"time"
@@ -53,11 +53,11 @@ func (s *HTTPServerTestSuite) SetupTest() {
 	// Wait 100 milliseconds for the HTTPServer to be ready
 	assert.Eventually(func() bool {
 		if s.httpServer.ActivePort() == 0 {
-			log.Print("No active port available for HTTP testing")
+			nativelog.Print("No active port available for HTTP testing")
 			return false
 		} else if len(s.httpURLBase) == 0 {
 			s.httpURLBase = fmt.Sprintf("http://localhost:%d", s.httpServer.ActivePort())
-			log.Printf("Using base URL %s for HTTP testing", s.httpURLBase)
+			nativelog.Printf("Using base URL %s for HTTP testing", s.httpURLBase)
 		}
 
 		resp, err := http.Get(fmt.Sprintf("%s/ready", s.httpURLBase))

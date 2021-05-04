@@ -2,7 +2,7 @@ package impl_test
 
 import (
 	"context"
-	"log"
+	nativelog "log"
 	"sync"
 	"testing"
 	"time"
@@ -40,7 +40,7 @@ func (_m *mockHealth_WatchServer) Context() context.Context {
 }
 
 func (_m *mockHealth_WatchServer) Send(resp *healthproto.HealthCheckResponse) error {
-	log.Printf("MockHealthWatcher received status : %s", resp.GetStatus())
+	nativelog.Printf("MockHealthWatcher received status : %s", resp.GetStatus())
 	_m.healthUpdates = append(_m.healthUpdates, resp.GetStatus())
 	return nil
 }

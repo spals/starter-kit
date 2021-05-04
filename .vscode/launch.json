@@ -12,6 +12,8 @@
             "type": "go",
 
             "env": {
+                "GRPC_SERVER_DEV": true,
+                "GRPC_SERVER_LOG_LEVEL": "debug",
                 "GRPC_SERVER_PORT": 8081,
             },
             "args": []
@@ -24,6 +26,8 @@
             "type": "go",
 
             "env": {
+                "HTTP_SERVER_DEV": true,
+                "HTTP_SERVER_LOG_LEVEL": "debug",
                 "HTTP_SERVER_PORT": 8080,
             },
             "args": []

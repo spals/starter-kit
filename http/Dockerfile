@@ -15,5 +15,6 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/bin/http /starter-kit-http
 
 ENTRYPOINT /starter-kit-http
+ENV HTTP_SERVER_LOG_LEVEL info
 ENV HTTP_SERVER_PORT 8080
 EXPOSE 8080

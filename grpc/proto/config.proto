@@ -19,5 +19,7 @@ message ConfigResponse {
 }
 
 message GrpcServerConfig {
-	int32 port              = 1;
+	int32  port        = 1;
+  bool   dev         = 2;
+  string log_level    = 3;
 }

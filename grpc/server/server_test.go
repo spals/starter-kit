@@ -3,7 +3,7 @@ package server_test
 import (
 	"context"
 	"fmt"
-	"log"
+	nativelog "log"
 	"sync"
 	"testing"
 	"time"
@@ -43,6 +43,7 @@ type GrpcServerTestSuite struct {
 
 func (s *GrpcServerTestSuite) SetupSuite() {
 	configMap := make(map[string]string)
+	configMap["LOG_LEVEL"] = "trace"
 	testLookuper := envconfig.MapLookuper(configMap)
 
 	grpcServer, _ := server.InitializeGrpcServer(testLookuper)
@@ -58,12 +59,12 @@ func (s *GrpcServerTestSuite) SetupTest() {
 	// Wait 100 milliseconds for the GrpcServer to be ready
 	assert.Eventually(func() bool {
 		if s.grpcServer.ActivePort() == 0 {
-			log.Print("No active port available for Grpc testing")
+			nativelog.Print("No active port available for Grpc testing")
 			return false
 		} else if s.grpcConn == nil {
 			grpcTarget := fmt.Sprintf("localhost:%d", s.grpcServer.ActivePort())
 			s.grpcConn = client.NewGrpcClientConnForTest(grpcTarget)
-			log.Printf("Using target %s for Grpc testing", grpcTarget)
+			nativelog.Printf("Using target %s for Grpc testing", grpcTarget)
 		}
 
 		healthClient := healthproto.NewHealthClient(s.grpcConn)

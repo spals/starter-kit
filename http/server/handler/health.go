@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/heptiolabs/healthcheck"
+	"github.com/rs/zerolog/log"
 	"github.com/spals/starter-kit/http/server/config"
 )
 
@@ -20,6 +21,7 @@ func NewHealthCheckHandler(config *config.HTTPServerConfig) *healthcheck.Handler
 // ========== Private Helpers ==========
 
 func configureLivenessChecks(config *config.HTTPServerConfig, healthCheckHandler healthcheck.Handler) {
+	log.Debug().Str("name", "goroutine-threshold").Int("check", config.LivenessConfig.MaxGoRoutines).Msg("Adding liveness check")
 	healthCheckHandler.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(config.LivenessConfig.MaxGoRoutines))
 }
 

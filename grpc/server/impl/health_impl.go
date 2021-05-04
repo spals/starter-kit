@@ -3,10 +3,11 @@ package impl
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/health"
 	healthproto "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -78,9 +79,14 @@ func (r *HealthRegistry) markServingStatus(serviceName string, status healthprot
 	serving := (status == healthproto.HealthCheckResponse_SERVING)
 	r.serviceServingMap.Store(serviceName, serving)
 
+	logLevel := zerolog.InfoLevel
+	if !serving {
+		logLevel = zerolog.WarnLevel
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	log.Printf("Marking service '%s' as %s", serviceName, status)
+	log.WithLevel(logLevel).Str("service", serviceName).Interface("status", status.String()).Msg("Updating service health status")
 	r.delegate.SetServingStatus(serviceName, status)
 	r.delegate.SetServingStatus("", r.rootHealthStatus())
 }

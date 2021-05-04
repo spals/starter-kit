@@ -15,5 +15,6 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/bin/grpc /starter-kit-grpc
 
 ENTRYPOINT /starter-kit-grpc
+ENV GRPC_SERVER_LOG_LEVEL info
 ENV GRPC_SERVER_PORT 8081
 EXPOSE 8081

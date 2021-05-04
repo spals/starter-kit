@@ -25,6 +25,9 @@ type HTTPServerConfig struct {
 
 	LivenessConfig  *LivenessConfig  `env:",prefix=LIVENESS_"`
 	ReadinessConfig *ReadinessConfig `env:"prefix=READINESS_"`
+
+	// Configured logger used for request logging
+	ReqLogger zerolog.Logger
 }
 
 // NewHTTPServerConfig ...
@@ -37,7 +40,8 @@ func NewHTTPServerConfig(l envconfig.Lookuper) *HTTPServerConfig {
 		os.Exit(1)
 	}
 
-	log.Logger = makeLogger(&config)
+	// Configure logging as early as possible (i.e. as soon as we have a parsed configuration)
+	config.configureLogging()
 	log.Debug().Interface("config", config).Msg("HTTPServerConfig parsed")
 	return &config
 }
@@ -55,8 +59,14 @@ func (c *HTTPServerConfig) ToJSONString(prettyPrint bool) string {
 
 // ========== Private Helpers ==========
 
-func makeLogger(config *HTTPServerConfig) zerolog.Logger {
-	logLevel, err := zerolog.ParseLevel(config.LogLevel)
+func (c *HTTPServerConfig) configureLogging() {
+	// Set the default logger as the application logger
+	log.Logger = c.newLogger().With().Str("system", "starter-kit-http").Logger()
+	c.ReqLogger = c.newLogger().With().Str("system", "http-request").Logger()
+}
+
+func (c *HTTPServerConfig) newLogger() zerolog.Logger {
+	logLevel, err := zerolog.ParseLevel(c.LogLevel)
 	if err != nil {
 		nativelog.Fatalf("Error while parsing log level: %s. Available log levels are (trace|debug|info|warn|error|fatal|panic)", err)
 	} else if logLevel == zerolog.NoLevel {
@@ -64,13 +74,13 @@ func makeLogger(config *HTTPServerConfig) zerolog.Logger {
 	}
 	zerolog.SetGlobalLevel(logLevel)
 
-	if config.Dev {
+	if c.Dev {
 		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 		output.FormatFieldName = func(i interface{}) string {
-			return fmt.Sprintf("%s:", i)
+			return fmt.Sprintf("[%s]:", i)
 		}
 
-		return zerolog.New(output).With().Timestamp().Logger()
+		return zerolog.New(output).With().Timestamp().Caller().Logger()
 	} else {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 		return zerolog.New(os.Stderr).With().Timestamp().Logger()

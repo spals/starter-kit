@@ -57,7 +57,7 @@ func (c *HTTPServerConfig) ToJSONString(prettyPrint bool) string {
 
 func makeLogger(config *HTTPServerConfig) zerolog.Logger {
 	if config.Dev {
-		zerolog.SetGlobalLevel(zerolog.NoLevel)
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
 
 		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 		output.FormatFieldName = func(i interface{}) string {

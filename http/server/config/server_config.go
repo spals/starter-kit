@@ -18,9 +18,9 @@ import (
 //
 // See https://github.com/sethvargo/go-envconfig/blob/main/README.md
 type HTTPServerConfig struct {
-	IsDev           bool          `env:"DEV,default=false"`
+	Dev             bool          `env:"DEV,default=false"`
 	Port            int           `env:"PORT,default=0"`
-	LogLevel        string        `env:"LOG_LEVEL,default=info"`
+	LogLevel        string        `env:"LOG_LEVEL"`
 	ShutdownTimeout time.Duration `env:"SHUTDOWN_TIMEOUT,default=1s"`
 
 	LivenessConfig  *LivenessConfig  `env:",prefix=LIVENESS_"`
@@ -56,8 +56,8 @@ func (c *HTTPServerConfig) ToJSONString(prettyPrint bool) string {
 // ========== Private Helpers ==========
 
 func makeLogger(config *HTTPServerConfig) zerolog.Logger {
-	if config.IsDev {
-		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	if config.Dev {
+		zerolog.SetGlobalLevel(zerolog.NoLevel)
 
 		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 		output.FormatFieldName = func(i interface{}) string {

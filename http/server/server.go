@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/heptiolabs/healthcheck"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 	"github.com/rs/zerolog/log"
 	"github.com/spals/starter-kit/http/server/config"
@@ -40,8 +41,13 @@ func NewHTTPServer(
 	router := makeRouter(
 		config,
 		func(router *mux.Router) {
+			log.Debug().Str("path", "/config").Array("methods", zerolog.Arr().Str("GET")).Msg("Adding HTTP handler")
 			router.Path("/config").Methods("GET").Handler(httpServerConfigHandler)
+
+			log.Debug().Str("path", "/live").Array("methods", zerolog.Arr().Str("GET")).Msg("Adding HTTP handler")
 			router.Path("/live").Methods("GET").HandlerFunc((*healthCheckHandler).LiveEndpoint)
+
+			log.Debug().Str("path", "/ready").Array("methods", zerolog.Arr().Str("GET")).Msg("Adding HTTP handler")
 			router.Path("/ready").Methods("GET").HandlerFunc((*healthCheckHandler).ReadyEndpoint)
 		},
 	)

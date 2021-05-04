@@ -12,6 +12,7 @@
             "type": "go",
 
             "env": {
+                "GRPC_SERVER_DEV": true,
                 "GRPC_SERVER_PORT": 8081,
             },
             "args": []

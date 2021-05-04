@@ -1,68 +1,51 @@
 package config
 
 import (
-	"log"
+	"fmt"
+	nativelog "log"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	descriptorpb "google.golang.org/protobuf/types/descriptorpb"
 
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/spals/starter-kit/grpc/proto"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // NewGrpcServerConfig ...
 // Constructor for a Grpc server config. This is injected into
 // the dependency graph using wire (see main.go)
 func NewGrpcServerConfig(l envconfig.Lookuper) *proto.GrpcServerConfig {
-	log.Print("Parsing GrpcServerConfig")
-
 	serverConfig := proto.GrpcServerConfig{}
 	md, initErr := desc.LoadMessageDescriptorForMessage(&serverConfig)
 	if initErr != nil {
-		log.Fatalf("GrpcServerConfig initialization failure: %s", initErr)
+		nativelog.Fatalf("GrpcServerConfig initialization failure: %s", initErr)
 	}
 
 	dynamicConfig := dynamic.NewMessage(md)
 	dynamicConfig, parseErr := makeConfig(dynamicConfig, l)
 	if parseErr != nil {
-		log.Fatalf("GrpcServerConfig parse failure: %s", parseErr)
+		nativelog.Fatalf("GrpcServerConfig parse failure: %s", parseErr)
 	}
 
 	convertErr := dynamicConfig.ConvertTo(&serverConfig)
 	if convertErr != nil {
-		log.Fatalf("GrpcServerConfig covert failure: %s", convertErr)
+		nativelog.Fatalf("GrpcServerConfig covert failure: %s", convertErr)
 	}
 
-	configJson := protojson.Format(&serverConfig)
-	log.Printf("GrpcServerConfig parsed as \n%s", configJson)
+	log.Logger = makeLogger(&serverConfig)
+	log.Debug().Interface("config", &serverConfig).Msg("HTTPServerConfig parsed")
 
 	return &serverConfig
 }
 
-func makeConfig(dynamicMessage *dynamic.Message, l envconfig.Lookuper) (*dynamic.Message, error) {
-	for _, fd := range dynamicMessage.GetMessageDescriptor().GetFields() {
-		if fd.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-			// dynamicMessage.SetField(fd, makeConfig)
-		} else {
-			configKey := strings.ToUpper(fd.GetName())
-			configValue, configFound := l.Lookup(configKey)
-			log.Printf("GrpcServerConfig found %s as value \"%s\"", configKey, configValue)
-
-			if configFound {
-				convertedConfigValue := convertValue(fd, configValue)
-				dynamicMessage.SetField(fd, convertedConfigValue)
-			}
-		}
-
-	}
-
-	return dynamicMessage, nil
-}
+// ========== Private Helpers ==========
 
 // Yet another string -> type converter. This is a minimal implementation which
 // accounts for the types needed in the out-of-the-box configuration. More type
@@ -76,16 +59,56 @@ func convertValue(fd *desc.FieldDescriptor, configValue string) (val interface{}
 		descriptorpb.FieldDescriptorProto_TYPE_UINT32:
 		i, err := strconv.Atoi(configValue)
 		if err != nil {
-			log.Fatalf("GrpcServerConfig parse failure: Unable to parse int value (%s) for field (%s): %s", configValue, fd.GetName(), err)
-			os.Exit(1)
+			nativelog.Fatalf("GrpcServerConfig parse failure: Unable to parse int value (%s) for field (%s): %s", configValue, fd.GetName(), err)
 		}
 		return int32(i)
 	case descriptorpb.FieldDescriptorProto_TYPE_STRING:
 		return configValue
 	default:
-		log.Fatalf("GrpcServerConfig parse failure: Unable to parse value (%s) for field (%s): Unsupported type", configValue, fd.GetName())
-		os.Exit(1)
+		nativelog.Fatalf("GrpcServerConfig parse failure: Unable to parse value (%s) for field (%s): Unsupported type", configValue, fd.GetName())
 	}
 
 	return nil
+}
+
+func makeConfig(dynamicMessage *dynamic.Message, l envconfig.Lookuper) (*dynamic.Message, error) {
+	for _, fd := range dynamicMessage.GetMessageDescriptor().GetFields() {
+		if fd.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
+			// dynamicMessage.SetField(fd, makeConfig)
+		} else {
+			configKey := strings.ToUpper(fd.GetName())
+			configValue, configFound := l.Lookup(configKey)
+			nativelog.Printf("GrpcServerConfig found %s as value \"%s\"", configKey, configValue)
+
+			if configFound {
+				convertedConfigValue := convertValue(fd, configValue)
+				dynamicMessage.SetField(fd, convertedConfigValue)
+			}
+		}
+
+	}
+
+	return dynamicMessage, nil
+}
+
+func makeLogger(config *proto.GrpcServerConfig) zerolog.Logger {
+	if config.GetDev() {
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+
+		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+		output.FormatFieldName = func(i interface{}) string {
+			return fmt.Sprintf("%s:", i)
+		}
+
+		return zerolog.New(output).With().Timestamp().Logger()
+	} else {
+		logLevel, err := zerolog.ParseLevel(config.GetLogLevel())
+		if err != nil {
+			nativelog.Fatalf("Error while parsing log level: %s", err)
+		}
+		zerolog.SetGlobalLevel(logLevel)
+
+		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+		return zerolog.New(os.Stderr).With().Timestamp().Logger()
+	}
 }

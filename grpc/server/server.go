@@ -2,12 +2,12 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spals/starter-kit/grpc/proto"
 	"github.com/spals/starter-kit/grpc/server/impl"
 	"google.golang.org/grpc"
@@ -53,27 +53,26 @@ func (s *GrpcServer) Start() {
 	signal.Notify(grpcServerStopped, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	listener := s.makeListener()
-	log.Printf("GrpcServer listening on port :%d", s.config.GetPort())
+	log.Info().Msgf("GrpcServer listening on port :%d", s.config.GetPort())
 
 	go func() {
 		if err := s.delegate.Serve(listener); err != nil {
-			log.Fatalf("GrpcServer start failure: %s", err)
-			os.Exit(2)
+			log.Fatal().Err(err).Msg("GrpcServer start failure")
 		}
 	}()
-	log.Print("GrpcServer started")
+	log.Info().Msg("GrpcServer started")
 
 	<-grpcServerStopped
-	log.Print("GrpcServer stopped")
+	log.Info().Msg("GrpcServer stopped")
 	s.Shutdown()
 }
 
 // Shutdown ...
 func (s *GrpcServer) Shutdown() {
-	log.Print("Shutting down GrpcServer")
+	log.Info().Msg("Shutting down GrpcServer")
 	s.healthRegistry.Shutdown()
 	s.delegate.GracefulStop()
-	log.Print("GrpcServer shutdown")
+	log.Info().Msg("GrpcServer shutdown")
 }
 
 // ========== Private Helpers ==========
@@ -82,23 +81,21 @@ func (s *GrpcServer) makeListener() net.Listener {
 	// If a random port is requested, then find an open port
 	// See https://stackoverflow.com/questions/43424787/how-to-use-next-available-port-in-http-listenandserve
 	if s.config.GetPort() == 0 {
-		log.Print("Finding available random port")
+		log.Debug().Msg("Finding available random port")
 		listener, err := net.Listen("tcp", ":0")
 		if err != nil {
-			log.Fatalf("Error while finding random port: %s", err)
-			os.Exit(2)
+			log.Fatal().Err(err).Msg("Error while finding random port")
 		}
 
 		newPort := listener.Addr().(*net.TCPAddr).Port
-		log.Printf("Overwriting configured port (%d) with random port (%d)", s.config.Port, newPort)
+		log.Info().Msgf("Overwriting configured port (%d) with random port (%d)", s.config.Port, newPort)
 		s.config.Port = int32(newPort)
 		return listener
 	}
 
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", s.config.GetPort()))
 	if err != nil {
-		log.Fatalf("Error while listening on port %d: %s", s.config.GetPort(), err)
-		os.Exit(2)
+		log.Fatal().Err(err).Msgf("Error while listening on port %d", s.config.GetPort())
 	}
 	return listener
 }

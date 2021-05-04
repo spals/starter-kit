@@ -38,6 +38,7 @@ type HTTPServerTestSuite struct {
 
 func (s *HTTPServerTestSuite) SetupSuite() {
 	configMap := make(map[string]string)
+	configMap["LOG_LEVEL"] = "trace"
 	testLookuper := envconfig.MapLookuper(configMap)
 
 	httpServer, _ := server.InitializeHTTPServer(testLookuper)

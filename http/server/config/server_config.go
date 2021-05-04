@@ -56,9 +56,15 @@ func (c *HTTPServerConfig) ToJSONString(prettyPrint bool) string {
 // ========== Private Helpers ==========
 
 func makeLogger(config *HTTPServerConfig) zerolog.Logger {
-	if config.Dev {
-		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	logLevel, err := zerolog.ParseLevel(config.LogLevel)
+	if err != nil {
+		nativelog.Fatalf("Error while parsing log level: %s. Available log levels are (trace|debug|info|warn|error|fatal|panic)", err)
+	} else if logLevel == zerolog.NoLevel {
+		nativelog.Fatalf("No log level configured. Please specify a log level (trace|debug|info|warn|error|fatal|panic)")
+	}
+	zerolog.SetGlobalLevel(logLevel)
 
+	if config.Dev {
 		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 		output.FormatFieldName = func(i interface{}) string {
 			return fmt.Sprintf("%s:", i)
@@ -66,12 +72,6 @@ func makeLogger(config *HTTPServerConfig) zerolog.Logger {
 
 		return zerolog.New(output).With().Timestamp().Logger()
 	} else {
-		logLevel, err := zerolog.ParseLevel(config.LogLevel)
-		if err != nil {
-			nativelog.Fatalf("Error while parsing log level: %s", err)
-		}
-		zerolog.SetGlobalLevel(logLevel)
-
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 		return zerolog.New(os.Stderr).With().Timestamp().Logger()
 	}

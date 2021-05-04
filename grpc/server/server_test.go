@@ -43,6 +43,7 @@ type GrpcServerTestSuite struct {
 
 func (s *GrpcServerTestSuite) SetupSuite() {
 	configMap := make(map[string]string)
+	configMap["LOG_LEVEL"] = "trace"
 	testLookuper := envconfig.MapLookuper(configMap)
 
 	grpcServer, _ := server.InitializeGrpcServer(testLookuper)

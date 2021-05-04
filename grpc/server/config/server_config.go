@@ -92,9 +92,15 @@ func makeConfig(dynamicMessage *dynamic.Message, l envconfig.Lookuper) (*dynamic
 }
 
 func makeLogger(config *proto.GrpcServerConfig) zerolog.Logger {
-	if config.GetDev() {
-		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	logLevel, err := zerolog.ParseLevel(config.GetLogLevel())
+	if err != nil {
+		nativelog.Fatalf("Error while parsing log level: %s. Available log levels are (trace|debug|info|warn|error|fatal|panic)", err)
+	} else if logLevel == zerolog.NoLevel {
+		nativelog.Fatalf("No log level configured. Please specify a log level (trace|debug|info|warn|error|fatal|panic)")
+	}
+	zerolog.SetGlobalLevel(logLevel)
 
+	if config.GetDev() {
 		output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 		output.FormatFieldName = func(i interface{}) string {
 			return fmt.Sprintf("%s:", i)
@@ -102,12 +108,6 @@ func makeLogger(config *proto.GrpcServerConfig) zerolog.Logger {
 
 		return zerolog.New(output).With().Timestamp().Logger()
 	} else {
-		logLevel, err := zerolog.ParseLevel(config.GetLogLevel())
-		if err != nil {
-			nativelog.Fatalf("Error while parsing log level: %s", err)
-		}
-		zerolog.SetGlobalLevel(logLevel)
-
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 		return zerolog.New(os.Stderr).With().Timestamp().Logger()
 	}

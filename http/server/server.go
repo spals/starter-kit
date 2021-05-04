@@ -135,15 +135,6 @@ func (s *HTTPServer) makeCustomListener() net.Listener {
 // See https://gist.github.com/husobee/fd23681261a39699ee37
 type middleware func(http.Handler) http.Handler
 
-func buildChain(f http.Handler, m ...middleware) http.Handler {
-	// If our chain is done, use the original handler
-	if len(m) == 0 {
-		return f
-	}
-	// Otherwise nest the handlers
-	return m[0](buildChain(f, m[1:cap(m)]...))
-}
-
 func addLoggingMiddleware(
 	config *config.HTTPServerConfig,
 	rootHandler http.Handler,
@@ -165,6 +156,15 @@ func addLoggingMiddleware(
 		hlog.RefererHandler("referer"),
 		hlog.RequestIDHandler("req_id", "Request-Id"),
 	)
+}
+
+func buildChain(f http.Handler, m ...middleware) http.Handler {
+	// If our chain is done, use the original handler
+	if len(m) == 0 {
+		return f
+	}
+	// Otherwise nest the handlers
+	return m[0](buildChain(f, m[1:cap(m)]...))
 }
 
 func makeRouter(

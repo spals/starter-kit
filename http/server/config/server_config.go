@@ -42,6 +42,19 @@ func NewHTTPServerConfig(l envconfig.Lookuper) *HTTPServerConfig {
 	return &config
 }
 
+// ToJSONString ...
+func (c *HTTPServerConfig) ToJSONString(prettyPrint bool) string {
+	if prettyPrint {
+		json, _ := json.MarshalIndent(c, "", "  ")
+		return string(json)
+	}
+
+	json, _ := json.Marshal(c)
+	return string(json)
+}
+
+// ========== Private Helpers ==========
+
 func makeLogger(config *HTTPServerConfig) zerolog.Logger {
 	if config.IsDev {
 		zerolog.SetGlobalLevel(zerolog.TraceLevel)
@@ -62,15 +75,4 @@ func makeLogger(config *HTTPServerConfig) zerolog.Logger {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 		return zerolog.New(os.Stderr).With().Timestamp().Logger()
 	}
-}
-
-// ToJSONString ...
-func (c *HTTPServerConfig) ToJSONString(prettyPrint bool) string {
-	if prettyPrint {
-		json, _ := json.MarshalIndent(c, "", "  ")
-		return string(json)
-	}
-
-	json, _ := json.Marshal(c)
-	return string(json)
 }

@@ -8,10 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/heptiolabs/healthcheck"
+	"github.com/rs/zerolog/hlog"
 	"github.com/rs/zerolog/log"
 	"github.com/spals/starter-kit/http/server/config"
 	"github.com/spals/starter-kit/http/server/handler"
@@ -125,6 +126,41 @@ func (s *HTTPServer) makeCustomListener() net.Listener {
 
 // ========== Private Helpers ==========
 
+// See https://gist.github.com/husobee/fd23681261a39699ee37
+type middleware func(http.Handler) http.Handler
+
+func buildChain(f http.Handler, m ...middleware) http.Handler {
+	// If our chain is done, use the original handler
+	if len(m) == 0 {
+		return f
+	}
+	// Otherwise nest the handlers
+	return m[0](buildChain(f, m[1:cap(m)]...))
+}
+
+func addLoggingMiddleware(
+	config *config.HTTPServerConfig,
+	rootHandler http.Handler,
+) http.Handler {
+	return buildChain(
+		rootHandler,
+		hlog.NewHandler(log.Logger),
+		hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
+			hlog.FromRequest(r).Info().
+				Str("method", r.Method).
+				Stringer("url", r.URL).
+				Int("status", status).
+				Int("size", size).
+				Dur("duration", duration).
+				Msg("HTTPRequest")
+		}),
+		hlog.RemoteAddrHandler("ip"),
+		hlog.UserAgentHandler("user_agent"),
+		hlog.RefererHandler("referer"),
+		hlog.RequestIDHandler("req_id", "Request-Id"),
+	)
+}
+
 func makeRouter(
 	config *config.HTTPServerConfig,
 	routerRegistration routerRegistration,
@@ -133,7 +169,6 @@ func makeRouter(
 	routerRegistration(router)
 
 	// Wrap router in a logging handler in order to create access logs
-	// See https://godoc.org/github.com/gorilla/handlers#LoggingHandler
-	loggedRouter := handlers.LoggingHandler(os.Stdout, router)
-	return loggedRouter
+	routerWithLogging := addLoggingMiddleware(config, router)
+	return routerWithLogging
 }

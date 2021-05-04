@@ -31,8 +31,11 @@ func NewGrpcServer(
 	configServer *impl.ConfigServer,
 ) *GrpcServer {
 	delegate := grpc.NewServer(
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			logging.StreamServerInterceptor(),
+		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			logging.UnaryRequestLogMiddleware,
+			logging.UnaryServerInterceptor(),
 		)),
 	)
 

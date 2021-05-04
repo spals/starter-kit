@@ -86,12 +86,34 @@ func (l zerologGrpcLoggerV2) Println(args ...interface{}) {
 	l.Print(args...)
 }
 
-func (l zerologGrpcLoggerV2) V(level int) bool {
-	return true
+func (l zerologGrpcLoggerV2) V(verbosity int) bool {
+	// verbosity values:
+	// 0 = info
+	// 1 = warning
+	// 2 = error
+	// 3 = fatal
+	switch l.delegate.GetLevel() {
+	case zerolog.PanicLevel:
+		return verbosity > 3
+	case zerolog.FatalLevel:
+		return verbosity == 3
+	case zerolog.ErrorLevel:
+		return verbosity == 2
+	case zerolog.WarnLevel:
+		return verbosity == 1
+	case zerolog.InfoLevel:
+		return verbosity == 0
+	case zerolog.DebugLevel:
+		return true
+	case zerolog.TraceLevel:
+		return true
+	default:
+		return false
+	}
 }
 
-var StreamRequestLogMiddleware grpc.StreamServerInterceptor
-var UnaryRequestLogMiddleware grpc.UnaryServerInterceptor
+var grpcStreamReqLogger zerolog.Logger = zerolog.Nop()
+var grpcUnaryReqLogger zerolog.Logger = zerolog.Nop()
 
 func ConfigureLogging(config *proto.GrpcServerConfig) {
 	// Set the default logger as the application logger
@@ -101,8 +123,63 @@ func ConfigureLogging(config *proto.GrpcServerConfig) {
 	grpcCoreLogger := newLogger(config).With().Str("system", "grpc-core").Logger()
 	grpclog.SetLoggerV2(zerologGrpcLoggerV2{delegate: grpcCoreLogger})
 
-	grpcUnaryRequestLogger := newLogger(config).With().Str("system", "grpc-request").Str("request-type", "unary").Logger()
-	UnaryRequestLogMiddleware = newUnaryRequestLogMiddleware(grpcUnaryRequestLogger)
+	// Configure loggers for Grpc requests. See inceptors below
+	grpcStreamReqLogger = newLogger(config).With().Str("system", "grpc-request").Str("request-type", "stream").Logger()
+	grpcUnaryReqLogger = newLogger(config).With().Str("system", "grpc-request").Str("request-type", "unary").Logger()
+}
+
+// See https://www.gitmemory.com/issue/rs/zerolog/211/774897456
+// See https://github.com/grpc-ecosystem/go-grpc-middleware/blob/master/logging/zap/server_interceptors.go
+func StreamServerInterceptor() grpc.StreamServerInterceptor {
+	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		startTime := time.Now()
+		err := handler(srv, stream)
+		duration := time.Since(startTime)
+
+		code := status.Code(err)
+		level := reqLogLevel(code)
+		reqLogEvent := grpcStreamReqLogger.WithLevel(level).
+			Err(err).
+			Str("grpc.code", code.String()).
+			Str("grpc.method", path.Base(info.FullMethod)).
+			Str("grpc.service", path.Dir(info.FullMethod)).
+			Str("grpc.start_time", startTime.Format(time.RFC3339)).
+			Dur("grpc.time_ms", duration)
+
+		if d, ok := stream.Context().Deadline(); ok {
+			reqLogEvent = reqLogEvent.Str("grpc.request.deadline", d.Format(time.RFC3339))
+		}
+
+		reqLogEvent.Msg("Finished stream call")
+		return err
+	}
+}
+
+// See https://www.gitmemory.com/issue/rs/zerolog/211/774897456
+// See https://github.com/grpc-ecosystem/go-grpc-middleware/blob/master/logging/zap/server_interceptors.go
+func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		startTime := time.Now()
+		resp, err := handler(ctx, req)
+		duration := time.Since(startTime)
+
+		code := status.Code(err)
+		level := reqLogLevel(code)
+		reqLogEvent := grpcUnaryReqLogger.WithLevel(level).
+			Err(err).
+			Str("grpc.code", code.String()).
+			Str("grpc.method", path.Base(info.FullMethod)).
+			Str("grpc.service", path.Dir(info.FullMethod)).
+			Str("grpc.start_time", startTime.Format(time.RFC3339)).
+			Dur("grpc.time_ms", duration)
+
+		if d, ok := ctx.Deadline(); ok {
+			reqLogEvent = reqLogEvent.Str("grpc.request.deadline", d.Format(time.RFC3339))
+		}
+
+		reqLogEvent.Msg("Finished unary call")
+		return resp, err
+	}
 }
 
 // ========== Private Helpers ==========
@@ -126,33 +203,6 @@ func newLogger(config *proto.GrpcServerConfig) zerolog.Logger {
 	} else {
 		zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 		return zerolog.New(os.Stderr).With().Timestamp().Logger()
-	}
-}
-
-// See https://www.gitmemory.com/issue/rs/zerolog/211/774897456
-// See https://github.com/grpc-ecosystem/go-grpc-middleware/blob/master/logging/zap/server_interceptors.go
-func newUnaryRequestLogMiddleware(reqLogger zerolog.Logger) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		startTime := time.Now()
-		resp, err := handler(ctx, req)
-		duration := time.Since(startTime)
-
-		code := status.Code(err)
-		level := reqLogLevel(code)
-		reqLogEvent := reqLogger.WithLevel(level).
-			Err(err).
-			Str("grpc.code", code.String()).
-			Str("grpc.method", path.Base(info.FullMethod)).
-			Str("grpc.service", path.Dir(info.FullMethod)).
-			Str("grpc.start_time", startTime.Format(time.RFC3339)).
-			Dur("grpc.time_ms", duration)
-
-		if d, ok := ctx.Deadline(); ok {
-			reqLogEvent = reqLogEvent.Str("grpc.request.deadline", d.Format(time.RFC3339))
-		}
-
-		reqLogEvent.Msg("Finished unary call")
-		return resp, err
 	}
 }
 

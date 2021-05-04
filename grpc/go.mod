@@ -3,9 +3,9 @@ module github.com/spals/starter-kit/grpc
 go 1.15
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/protobuf v1.4.3
 	github.com/google/wire v0.5.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/jhump/protoreflect v1.8.1
 	github.com/rs/zerolog v1.21.0
 	github.com/sethvargo/go-envconfig v0.3.2

@@ -7,11 +7,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/rs/zerolog/log"
 	"github.com/spals/starter-kit/grpc/proto"
 	"github.com/spals/starter-kit/grpc/server/impl"
+	"github.com/spals/starter-kit/grpc/server/logging"
 	"google.golang.org/grpc"
 	healthproto "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
 )
 
 // GrpcServer ...
@@ -27,9 +30,14 @@ func NewGrpcServer(
 	healthRegistry *impl.HealthRegistry,
 	configServer *impl.ConfigServer,
 ) *GrpcServer {
-	delegate := grpc.NewServer()
+	delegate := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			logging.UnaryRequestLogMiddleware,
+		)),
+	)
 
 	// Register any service implementations
+	reflection.Register(delegate)
 	healthproto.RegisterHealthServer(delegate, healthRegistry)
 	proto.RegisterConfigServer(delegate, configServer)
 

@@ -1,13 +1,13 @@
-name: Grpc Docker CD
+name: HTTP DockerHub CD
 
 on:
   workflow_run:
-    workflows: [ "Grpc Tests CI" ]
+    workflows: [ "HTTP Tests CI" ]
     branches: [ main ]
     types: [ completed ]
 
 jobs:
-  publish-docker-grpc:
+  publish-docker-http:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
@@ -22,10 +22,10 @@ jobs:
       id: docker-meta
       uses: crazy-max/ghaction-docker-meta@v2
       with:
-        images: spals/starter-kit-grpc
+        images: spals/starter-kit-http
         labels: |
-          org.opencontainers.image.title=starter-kit-grpc
-          org.opencontainers.image.description=Starting boilerplate for Golang Grpc servers
+          org.opencontainers.image.title=starter-kit-http
+          org.opencontainers.image.description=Starting boilerplate for Golang HTTP servers
           org.opencontainers.image.vendor=Spals
         tags: |
           type=edge,branch=main
@@ -49,16 +49,16 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-grpc-buildx-${{ github.sha }}
+        key: ${{ runner.os }}-http-buildx-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-grpc-buildx-
+          ${{ runner.os }}-http-buildx-
 
     - name: Publish Docker Image
       uses: docker/build-push-action@v2
       with:
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache-new
-        context: ./grpc
+        context: ./http
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.docker-meta.outputs.tags }}
         labels: ${{ steps.docker-meta.outputs.labels }}

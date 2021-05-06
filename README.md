@@ -1,6 +1,6 @@
-[![][License img]][License] [![][Made With img]][Made With] [![][Golang Lint img]][Golang Lint]  
-[![][HTTP Tests img]][HTTP Tests] [![][HTTP Docker img]][HTTP Docker] [![][HTTP Dockerhub img]][HTTP Dockerhub]  
-[![][Grpc Tests img]][Grpc Tests] [![][Grpc Docker img]][Grpc Docker] [![][Grpc Dockerhub img]][Grpc Dockerhub]  
+[![][License img]][License] [![][Made With img]][Made With] [![][Golang Lint CI img]][Golang Lint CI]  
+[![][HTTP Tests CI img]][HTTP Tests CI] [![][HTTP DockerHub CD img]][HTTP DockerHub CD] [![][HTTP DockerHub img]][HTTP DockerHub]  
+[![][Grpc Tests CI img]][Grpc Tests CI] [![][Grpc DockerHub CD img]][Grpc DockerHub CD] [![][Grpc DockerHub img]][Grpc DockerHub]  
 
 [License]:LICENSE
 [License img]:https://img.shields.io/badge/License-BSD3-blue.svg
@@ -8,26 +8,26 @@
 [Made With]:http://golang.org
 [Made With img]:https://img.shields.io/badge/Made%20With-Go-29BEB0.svg
 
-[Golang Lint]:https://github.com/spals/starter-kit/actions/workflows/golangci-lint.yml?query=branch%3Amain
-[Golang Lint img]:https://github.com/spals/starter-kit/actions/workflows/golangci-lint.yml/badge.svg
+[Golang Lint CI]:https://github.com/spals/starter-kit/actions/workflows/golangci-lint.yml?query=branch%3Amain
+[Golang Lint CI img]:https://github.com/spals/starter-kit/actions/workflows/golangci-lint.yml/badge.svg
 
-[HTTP Docker]:https://github.com/spals/starter-kit/actions/workflows/http-docker.yml?query=branch%3Amain
-[HTTP Docker img]:https://github.com/spals/starter-kit/actions/workflows/http-docker.yml/badge.svg
+[HTTP DockerHub CD]:https://github.com/spals/starter-kit/actions/workflows/http-dockerhub.yml?query=branch%3Amain
+[HTTP DockerHub CD img]:https://github.com/spals/starter-kit/actions/workflows/http-dockerhub.yml/badge.svg
 
-[HTTP Dockerhub]:https://hub.docker.com/repository/docker/spals/starter-kit-http
-[HTTP Dockerhub img]:https://img.shields.io/badge/Dockerhub-spals%2Fstarter--kit--http-2496ED.svg
+[HTTP DockerHub]:https://hub.docker.com/repository/docker/spals/starter-kit-http
+[HTTP DockerHub img]:https://img.shields.io/badge/DockerHub-spals%2Fstarter--kit--http-2496ED.svg
 
-[HTTP Tests]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml?query=branch%3Amain
-[HTTP Tests img]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml/badge.svg
+[HTTP Tests CI]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml?query=branch%3Amain
+[HTTP Tests CI img]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml/badge.svg
 
-[Grpc Docker]:https://github.com/spals/starter-kit/actions/workflows/grpc-docker.yml?query=branch%3Amain
-[Grpc Docker img]:https://github.com/spals/starter-kit/actions/workflows/grpc-docker.yml/badge.svg
+[Grpc DockerHub CD]:https://github.com/spals/starter-kit/actions/workflows/grpc-dockerhub.yml?query=branch%3Amain
+[Grpc DockerHub CD img]:https://github.com/spals/starter-kit/actions/workflows/grpc-dockerhub.yml/badge.svg
 
-[Grpc Dockerhub]:https://hub.docker.com/repository/docker/spals/starter-kit-grpc
-[Grpc Dockerhub img]:https://img.shields.io/badge/Dockerhub-spals%2Fstarter--kit--grpc-2496ED.svg
+[Grpc DockerHub]:https://hub.docker.com/repository/docker/spals/starter-kit-grpc
+[Grpc DockerHub img]:https://img.shields.io/badge/DockerHub-spals%2Fstarter--kit--grpc-2496ED.svg
 
-[Grpc Tests]:https://github.com/spals/starter-kit/actions/workflows/grpc-tests.yml?query=branch%3Amain
-[Grpc Tests img]:https://github.com/spals/starter-kit/actions/workflows/grpc-tests.yml/badge.svg
+[Grpc Tests CI]:https://github.com/spals/starter-kit/actions/workflows/grpc-tests.yml?query=branch%3Amain
+[Grpc Tests CI img]:https://github.com/spals/starter-kit/actions/workflows/grpc-tests.yml/badge.svg
 
 # Go Starter Kit
 

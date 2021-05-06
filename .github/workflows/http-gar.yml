@@ -22,15 +22,18 @@ jobs:
       id: docker-meta
       uses: crazy-max/ghaction-docker-meta@v2
       with:
-        images: spals/starter-kit-http
+        # Format: [location].pkg.dev/[project-id]/[repository-name]/[image-name]
+        images: us-west2-docker.pkg.dev/core-result-312906/starter-kit/http
         labels: |
           org.opencontainers.image.title=starter-kit-http
           org.opencontainers.image.description=Starting boilerplate for Golang HTTP servers
           org.opencontainers.image.vendor=Spals
         tags: |
           type=edge,branch=main
+          type=schedule
           type=sha
 
+    # See https://github.com/marketplace/actions/docker-login#google-artifact-registry-gar
     - name: Login to GAR
       uses: docker/login-action@v1 
       with:

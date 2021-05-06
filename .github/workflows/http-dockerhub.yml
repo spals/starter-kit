@@ -36,6 +36,7 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=sha
 
+    # See https://github.com/marketplace/actions/docker-login#docker-hub
     - name: Login to DockerHub
       uses: docker/login-action@v1 
       with:

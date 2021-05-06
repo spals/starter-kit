@@ -1,0 +1,68 @@
+name: HTTP GAR CD
+
+on:
+  workflow_run:
+    workflows: [ "HTTP Tests CI" ]
+    branches: [ main ]
+    types: [ completed ]
+
+jobs:
+  publish-docker-http:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+    - name: Setup QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Setup Docker Labels and Tags
+      id: docker-meta
+      uses: crazy-max/ghaction-docker-meta@v2
+      with:
+        images: spals/starter-kit-http
+        labels: |
+          org.opencontainers.image.title=starter-kit-http
+          org.opencontainers.image.description=Starting boilerplate for Golang HTTP servers
+          org.opencontainers.image.vendor=Spals
+        tags: |
+          type=edge,branch=main
+          type=sha
+
+    - name: Login to GAR
+      uses: docker/login-action@v1 
+      with:
+        registry: us-west2-docker.pkg.dev
+        username: _json_key
+        password: ${{ secrets.GAR_JSON_KEY }}
+
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Setup Docker Cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-http-gar-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-http-gar-buildx-
+
+    - name: Publish Docker Image
+      uses: docker/build-push-action@v2
+      with:
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache-new
+        context: ./http
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.docker-meta.outputs.tags }}
+        labels: ${{ steps.docker-meta.outputs.labels }}
+
+    # Temp fix
+    # https://github.com/docker/build-push-action/issues/252
+    # https://github.com/moby/buildkit/issues/1896
+    - name: Move Docker Cache
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache

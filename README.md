@@ -1,5 +1,5 @@
 [![][License img]][License] [![][Made With img]][Made With] [![][Golang Lint CI img]][Golang Lint CI]  
-[![][HTTP Tests CI img]][HTTP Tests CI] [![][HTTP DockerHub CD img]][HTTP DockerHub CD] [![][HTTP DockerHub img]][HTTP DockerHub]  
+[![][HTTP Tests CI img]][HTTP Tests CI] [![][HTTP DockerHub CD img]][HTTP DockerHub CD] [![][HTTP DockerHub img]][HTTP DockerHub] [![][HTTP GAR CD img]][HTTP GAR CD]  
 [![][Grpc Tests CI img]][Grpc Tests CI] [![][Grpc DockerHub CD img]][Grpc DockerHub CD] [![][Grpc DockerHub img]][Grpc DockerHub]  
 
 [License]:LICENSE
@@ -16,6 +16,9 @@
 
 [HTTP DockerHub]:https://hub.docker.com/repository/docker/spals/starter-kit-http
 [HTTP DockerHub img]:https://img.shields.io/badge/DockerHub-spals%2Fstarter--kit--http-2496ED.svg
+
+[HTTP GAR CD]:https://github.com/spals/starter-kit/actions/workflows/http-gar.yml?query=branch%3Amain
+[HTTP GAR CD img]:https://github.com/spals/starter-kit/actions/workflows/http-gar.yml/badge.svg
 
 [HTTP Tests CI]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml?query=branch%3Amain
 [HTTP Tests CI img]:https://github.com/spals/starter-kit/actions/workflows/http-tests.yml/badge.svg

@@ -1,0 +1,21 @@
+name: HTTP GAE CD
+
+on:
+  workflow_run:
+    workflows: [ "HTTP GAR CD" ]
+    branches: [ main ]
+    types: [ completed ]
+
+jobs:
+  deploy-app-http:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GAE_JSON_KEY }}
+          export_default_credentials: true
+      

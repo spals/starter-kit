@@ -23,7 +23,7 @@ jobs:
       uses: crazy-max/ghaction-docker-meta@v2
       with:
         # Format: [location].pkg.dev/[project-id]/[repository-name]/[image-name]
-        images: us-west2-docker.pkg.dev/core-result-312906/starter-kit/http
+        images: us-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/starter-kit/http
         labels: |
           org.opencontainers.image.title=starter-kit-http
           org.opencontainers.image.description=Starting boilerplate for Golang HTTP servers
